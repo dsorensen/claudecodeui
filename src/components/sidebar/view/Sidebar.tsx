@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDeviceSettings } from '../../../hooks/useDeviceSettings';
 import { useVersionCheck } from '../../../hooks/useVersionCheck';
@@ -11,6 +11,7 @@ import type { MCPServerStatus, SidebarProps } from '../types/types';
 import SidebarCollapsed from './subcomponents/SidebarCollapsed';
 import SidebarContent from './subcomponents/SidebarContent';
 import SidebarModals from './subcomponents/SidebarModals';
+import type { SidebarFlatSessionListProps } from './subcomponents/SidebarFlatSessionList';
 import type { SidebarProjectListProps } from './subcomponents/SidebarProjectList';
 
 type TaskMasterSidebarContext = {
@@ -62,6 +63,8 @@ function Sidebar({
     searchFilter,
     searchMode,
     setSearchMode,
+    sidebarViewMode,
+    setSidebarViewMode,
     conversationResults,
     isSearching,
     searchProgress,
@@ -71,6 +74,7 @@ function Sidebar({
     sessionDeleteConfirmation,
     showVersionModal,
     filteredProjects,
+    filteredFlatSessions,
     toggleProject,
     handleSessionClick,
     toggleStarProject,
@@ -132,6 +136,11 @@ function Sidebar({
     window.location.reload();
   };
 
+  const projectsByName = useMemo(
+    () => new Map(projects.map((project) => [project.name, project])),
+    [projects],
+  );
+
   const projectListProps: SidebarProjectListProps = {
     projects,
     filteredProjects,
@@ -183,6 +192,45 @@ function Sidebar({
     t,
   };
 
+  const flatListProps: SidebarFlatSessionListProps = {
+    projects,
+    projectsByName,
+    filteredFlatSessions,
+    flatSessionsTotal: projects.reduce(
+      (acc, project) =>
+        acc +
+        (project.sessions?.length || 0) +
+        (project.cursorSessions?.length || 0) +
+        (project.codexSessions?.length || 0) +
+        (project.geminiSessions?.length || 0),
+      0,
+    ),
+    selectedSession,
+    isLoading,
+    loadingProgress,
+    currentTime,
+    editingSession,
+    editingSessionName,
+    searchFilter,
+    onEditingSessionNameChange: setEditingSessionName,
+    onStartEditingSession: (sessionId, initialName) => {
+      setEditingSession(sessionId);
+      setEditingSessionName(initialName);
+    },
+    onCancelEditingSession: () => {
+      setEditingSession(null);
+      setEditingSessionName('');
+    },
+    onSaveEditingSession: (projectName: string, sessionId: string, summary: string, provider: SessionProvider) => {
+      void updateSessionSummary(projectName, sessionId, summary, provider);
+    },
+    onProjectSelect: handleProjectSelect,
+    onSessionSelect: handleSessionClick,
+    onDeleteSession: showDeleteSessionConfirmation,
+    onSwitchToGroupedView: () => setSidebarViewMode('grouped'),
+    t,
+  };
+
   return (
     <>
       <SidebarModals
@@ -231,6 +279,8 @@ function Sidebar({
               setSearchMode(mode);
               if (mode === 'projects') clearConversationResults();
             }}
+            viewMode={sidebarViewMode}
+            onViewModeChange={setSidebarViewMode}
             conversationResults={conversationResults}
             isSearching={isSearching}
             searchProgress={searchProgress}
@@ -270,6 +320,7 @@ function Sidebar({
             onShowVersionModal={() => setShowVersionModal(true)}
             onShowSettings={onShowSettings}
             projectListProps={projectListProps}
+            flatListProps={flatListProps}
             t={t}
           />
         </>

@@ -24,6 +24,7 @@ import type {
   ProjectSortOrder,
   SettingsMainTab,
   SettingsProject,
+  SidebarViewMode,
 } from '../types/types';
 
 type ThemeContextValue = {
@@ -85,6 +86,7 @@ type ClaudeSettingsStorage = {
   disallowedTools?: string[];
   skipPermissions?: boolean;
   projectSortOrder?: ProjectSortOrder;
+  sidebarViewMode?: SidebarViewMode;
 };
 
 type CursorSettingsStorage = {
@@ -212,6 +214,7 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
   const [saveStatus, setSaveStatus] = useState<'success' | 'error' | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [projectSortOrder, setProjectSortOrder] = useState<ProjectSortOrder>('name');
+  const [sidebarViewMode, setSidebarViewMode] = useState<SidebarViewMode>('grouped');
   const [codeEditorSettings, setCodeEditorSettings] = useState<CodeEditorSettingsState>(() => (
     readCodeEditorSettings()
   ));
@@ -668,6 +671,7 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
         skipPermissions: Boolean(savedClaudeSettings.skipPermissions),
       });
       setProjectSortOrder(savedClaudeSettings.projectSortOrder === 'date' ? 'date' : 'name');
+      setSidebarViewMode(savedClaudeSettings.sidebarViewMode === 'flat' ? 'flat' : 'grouped');
 
       const savedCursorSettings = parseJson<CursorSettingsStorage>(
         localStorage.getItem('cursor-tools-settings'),
@@ -719,6 +723,7 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
       setNotificationPreferences(createDefaultNotificationPreferences());
       setCodexPermissionMode('default');
       setProjectSortOrder('name');
+      setSidebarViewMode('grouped');
     }
   }, [fetchCodexMcpServers, fetchCursorMcpServers, fetchMcpServers]);
 
@@ -747,6 +752,7 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
         disallowedTools: claudePermissions.disallowedTools,
         skipPermissions: claudePermissions.skipPermissions,
         projectSortOrder,
+        sidebarViewMode,
         lastUpdated: now,
       }));
 
@@ -791,6 +797,7 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
     notificationPreferences,
     geminiPermissionMode,
     projectSortOrder,
+    sidebarViewMode,
   ]);
 
   const updateCodeEditorSetting = useCallback(
@@ -905,6 +912,8 @@ export function useSettingsController({ isOpen, initialTab, projects, onClose }:
     deleteError,
     projectSortOrder,
     setProjectSortOrder,
+    sidebarViewMode,
+    setSidebarViewMode,
     codeEditorSettings,
     updateCodeEditorSetting,
     claudePermissions,

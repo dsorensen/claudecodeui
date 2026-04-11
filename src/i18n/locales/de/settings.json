@@ -108,6 +108,12 @@
       "alphabetical": "Alphabetisch",
       "recentActivity": "Letzte Aktivität"
     },
+    "sidebarViewMode": {
+      "label": "Seitenleistenansicht",
+      "description": "Seitenleiste nach Projekt oder als flache, nach Aktualität sortierte Sitzungsliste organisieren",
+      "grouped": "Nach Projekt gruppiert",
+      "flat": "Aktuelle Sitzungen"
+    },
     "codeEditor": {
       "title": "Code-Editor",
       "theme": {

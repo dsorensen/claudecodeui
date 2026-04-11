@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { DarkModeToggle } from '../../../../shared/view/ui';
-import type { CodeEditorSettingsState, ProjectSortOrder } from '../../types/types';
+import type { CodeEditorSettingsState, ProjectSortOrder, SidebarViewMode } from '../../types/types';
 import LanguageSelector from '../../../../shared/view/ui/LanguageSelector';
 import SettingsCard from '../SettingsCard';
 import SettingsRow from '../SettingsRow';
@@ -10,6 +10,8 @@ import SettingsToggle from '../SettingsToggle';
 type AppearanceSettingsTabProps = {
   projectSortOrder: ProjectSortOrder;
   onProjectSortOrderChange: (value: ProjectSortOrder) => void;
+  sidebarViewMode: SidebarViewMode;
+  onSidebarViewModeChange: (value: SidebarViewMode) => void;
   codeEditorSettings: CodeEditorSettingsState;
   onCodeEditorThemeChange: (value: 'dark' | 'light') => void;
   onCodeEditorWordWrapChange: (value: boolean) => void;
@@ -21,6 +23,8 @@ type AppearanceSettingsTabProps = {
 export default function AppearanceSettingsTab({
   projectSortOrder,
   onProjectSortOrderChange,
+  sidebarViewMode,
+  onSidebarViewModeChange,
   codeEditorSettings,
   onCodeEditorThemeChange,
   onCodeEditorWordWrapChange,
@@ -58,10 +62,28 @@ export default function AppearanceSettingsTab({
             <select
               value={projectSortOrder}
               onChange={(event) => onProjectSortOrderChange(event.target.value as ProjectSortOrder)}
-              className="w-full rounded-lg border border-input bg-card p-2.5 text-sm text-foreground touch-manipulation focus:border-primary focus:ring-1 focus:ring-primary sm:w-36"
+              className="w-full touch-manipulation rounded-lg border border-input bg-card p-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary sm:w-36"
             >
               <option value="name">{t('appearanceSettings.projectSorting.alphabetical')}</option>
               <option value="date">{t('appearanceSettings.projectSorting.recentActivity')}</option>
+            </select>
+          </SettingsRow>
+        </SettingsCard>
+      </SettingsSection>
+
+      <SettingsSection title={t('appearanceSettings.sidebarViewMode.label')}>
+        <SettingsCard>
+          <SettingsRow
+            label={t('appearanceSettings.sidebarViewMode.label')}
+            description={t('appearanceSettings.sidebarViewMode.description')}
+          >
+            <select
+              value={sidebarViewMode}
+              onChange={(event) => onSidebarViewModeChange(event.target.value as SidebarViewMode)}
+              className="w-full touch-manipulation rounded-lg border border-input bg-card p-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary sm:w-48"
+            >
+              <option value="grouped">{t('appearanceSettings.sidebarViewMode.grouped')}</option>
+              <option value="flat">{t('appearanceSettings.sidebarViewMode.flat')}</option>
             </select>
           </SettingsRow>
         </SettingsCard>
@@ -120,7 +142,7 @@ export default function AppearanceSettingsTab({
             <select
               value={codeEditorSettings.fontSize}
               onChange={(event) => onCodeEditorFontSizeChange(event.target.value)}
-              className="w-full rounded-lg border border-input bg-card p-2.5 text-sm text-foreground touch-manipulation focus:border-primary focus:ring-1 focus:ring-primary sm:w-28"
+              className="w-full touch-manipulation rounded-lg border border-input bg-card p-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary sm:w-28"
             >
               <option value="10">10px</option>
               <option value="11">11px</option>

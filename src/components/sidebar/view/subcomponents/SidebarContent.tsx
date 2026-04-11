@@ -5,6 +5,8 @@ import { ScrollArea } from '../../../../shared/view/ui';
 import type { Project } from '../../../../types/app';
 import type { ReleaseInfo } from '../../../../types/sharedTypes';
 import type { ConversationSearchResults, SearchProgress } from '../../hooks/useSidebarController';
+import type { SidebarViewMode } from '../../types/types';
+import SidebarFlatSessionList, { type SidebarFlatSessionListProps } from './SidebarFlatSessionList';
 import SidebarFooter from './SidebarFooter';
 import SidebarHeader from './SidebarHeader';
 import SidebarProjectList, { type SidebarProjectListProps } from './SidebarProjectList';
@@ -45,6 +47,8 @@ type SidebarContentProps = {
   onClearSearchFilter: () => void;
   searchMode: SearchMode;
   onSearchModeChange: (mode: SearchMode) => void;
+  viewMode: SidebarViewMode;
+  onViewModeChange: (mode: SidebarViewMode) => void;
   conversationResults: ConversationSearchResults | null;
   isSearching: boolean;
   searchProgress: SearchProgress | null;
@@ -60,6 +64,7 @@ type SidebarContentProps = {
   onShowVersionModal: () => void;
   onShowSettings: () => void;
   projectListProps: SidebarProjectListProps;
+  flatListProps: SidebarFlatSessionListProps;
   t: TFunction;
 };
 
@@ -73,6 +78,8 @@ export default function SidebarContent({
   onClearSearchFilter,
   searchMode,
   onSearchModeChange,
+  viewMode,
+  onViewModeChange,
   conversationResults,
   isSearching,
   searchProgress,
@@ -88,6 +95,7 @@ export default function SidebarContent({
   onShowVersionModal,
   onShowSettings,
   projectListProps,
+  flatListProps,
   t,
 }: SidebarContentProps) {
   const showConversationSearch = searchMode === 'conversations' && searchFilter.trim().length >= 2;
@@ -108,6 +116,8 @@ export default function SidebarContent({
         onClearSearchFilter={onClearSearchFilter}
         searchMode={searchMode}
         onSearchModeChange={onSearchModeChange}
+        viewMode={viewMode}
+        onViewModeChange={onViewModeChange}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
         onCreateProject={onCreateProject}
@@ -210,6 +220,8 @@ export default function SidebarContent({
               ))}
             </div>
           ) : null
+        ) : viewMode === 'flat' ? (
+          <SidebarFlatSessionList {...flatListProps} />
         ) : (
           <SidebarProjectList {...projectListProps} />
         )}

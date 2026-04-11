@@ -1,8 +1,9 @@
-import { Folder, FolderPlus, MessageSquare, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
+import { Folder, FolderPlus, History, LayoutList, MessageSquare, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { Button, Input } from '../../../../shared/view/ui';
 import { IS_PLATFORM } from '../../../../constants/config';
 import { cn } from '../../../../lib/utils';
+import type { SidebarViewMode } from '../../types/types';
 import GitHubStarBadge from './GitHubStarBadge';
 
 type SearchMode = 'projects' | 'conversations';
@@ -17,6 +18,8 @@ type SidebarHeaderProps = {
   onClearSearchFilter: () => void;
   searchMode: SearchMode;
   onSearchModeChange: (mode: SearchMode) => void;
+  viewMode: SidebarViewMode;
+  onViewModeChange: (mode: SidebarViewMode) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
   onCreateProject: () => void;
@@ -34,12 +37,46 @@ export default function SidebarHeader({
   onClearSearchFilter,
   searchMode,
   onSearchModeChange,
+  viewMode,
+  onViewModeChange,
   onRefresh,
   isRefreshing,
   onCreateProject,
   onCollapseSidebar,
   t,
 }: SidebarHeaderProps) {
+  const ViewModeToggle = () => (
+    <div className="flex rounded-lg bg-muted/50 p-0.5">
+      <button
+        onClick={() => onViewModeChange('grouped')}
+        aria-pressed={viewMode === 'grouped'}
+        title={t('viewMode.groupedTooltip')}
+        className={cn(
+          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+          viewMode === 'grouped'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
+        )}
+      >
+        <LayoutList className="h-3 w-3" />
+        {t('viewMode.grouped')}
+      </button>
+      <button
+        onClick={() => onViewModeChange('flat')}
+        aria-pressed={viewMode === 'flat'}
+        title={t('viewMode.flatTooltip')}
+        className={cn(
+          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+          viewMode === 'flat'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
+        )}
+      >
+        <History className="h-3 w-3" />
+        {t('viewMode.flat')}
+      </button>
+    </div>
+  );
   const LogoBlock = () => (
     <div className="flex min-w-0 items-center gap-2.5">
       <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/90 shadow-sm">
@@ -112,6 +149,8 @@ export default function SidebarHeader({
         {/* Search bar */}
         {projectsCount > 0 && !isLoading && (
           <div className="mt-2.5 space-y-2">
+            {/* View mode toggle */}
+            <ViewModeToggle />
             {/* Search mode toggle */}
             <div className="flex rounded-lg bg-muted/50 p-0.5">
               <button
@@ -205,6 +244,7 @@ export default function SidebarHeader({
         {/* Mobile search */}
         {projectsCount > 0 && !isLoading && (
           <div className="mt-2.5 space-y-2">
+            <ViewModeToggle />
             <div className="flex rounded-lg bg-muted/50 p-0.5">
               <button
                 onClick={() => onSearchModeChange('projects')}

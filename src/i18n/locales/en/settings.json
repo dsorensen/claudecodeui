@@ -128,6 +128,12 @@
       "alphabetical": "Alphabetical",
       "recentActivity": "Recent Activity"
     },
+    "sidebarViewMode": {
+      "label": "Sidebar View",
+      "description": "Organize the sidebar by project or as a flat recency-ordered session list",
+      "grouped": "Grouped by project",
+      "flat": "Recent sessions"
+    },
     "codeEditor": {
       "title": "Code Editor",
       "theme": {

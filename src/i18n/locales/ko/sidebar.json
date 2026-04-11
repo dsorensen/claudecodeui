@@ -29,10 +29,20 @@
     "deleteSession": "세션 삭제",
     "renameSession": "세션 이름 변경",
     "noSessions": "세션이 없습니다",
+    "noSessionsDescription": "모든 프로젝트의 최근 세션이 여기에 표시됩니다",
+    "noMatchingSessions": "일치하는 세션이 없습니다",
     "loadingSessions": "세션 로딩 중...",
     "unnamed": "이름 없음",
     "loading": "로딩 중...",
-    "showMore": "더 많은 세션 보기"
+    "showMore": "더 많은 세션 보기",
+    "flatViewNote": "각 프로젝트의 최근 세션을 표시 중입니다.",
+    "switchToGrouped": "이전 세션을 보려면 그룹 보기로 전환하세요."
+  },
+  "viewMode": {
+    "grouped": "그룹",
+    "flat": "최근",
+    "groupedTooltip": "프로젝트별로 세션 그룹화",
+    "flatTooltip": "모든 세션을 최신순으로 표시"
   },
   "tooltips": {
     "viewEnvironments": "환경 보기",

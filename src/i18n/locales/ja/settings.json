@@ -128,6 +128,12 @@
       "alphabetical": "アルファベット順",
       "recentActivity": "最近のアクティビティ順"
     },
+    "sidebarViewMode": {
+      "label": "サイドバー表示",
+      "description": "サイドバーをプロジェクト別またはフラットな最近順のセッションリストとして整理します",
+      "grouped": "プロジェクト別グループ化",
+      "flat": "最近のセッション"
+    },
     "codeEditor": {
       "title": "コードエディタ",
       "theme": {

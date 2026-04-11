@@ -128,6 +128,12 @@
       "alphabetical": "알파벳순",
       "recentActivity": "최근 활동순"
     },
+    "sidebarViewMode": {
+      "label": "사이드바 보기",
+      "description": "사이드바를 프로젝트별로 또는 최근 순 세션 목록으로 구성",
+      "grouped": "프로젝트별 그룹",
+      "flat": "최근 세션"
+    },
     "codeEditor": {
       "title": "코드 에디터",
       "theme": {

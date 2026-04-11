@@ -2,6 +2,8 @@ import type { LoadingProgress, Project, ProjectSession, SessionProvider } from '
 
 export type ProjectSortOrder = 'name' | 'date';
 
+export type SidebarViewMode = 'grouped' | 'flat';
+
 export type SessionWithProvider = ProjectSession & {
   __provider: SessionProvider;
 };

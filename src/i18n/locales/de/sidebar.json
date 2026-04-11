@@ -29,10 +29,20 @@
     "deleteSession": "Sitzung löschen",
     "renameSession": "Sitzung umbenennen",
     "noSessions": "Noch keine Sitzungen",
+    "noSessionsDescription": "Ihre letzten Sitzungen aus allen Projekten werden hier angezeigt",
+    "noMatchingSessions": "Keine passenden Sitzungen",
     "loadingSessions": "Sitzungen werden geladen...",
     "unnamed": "Unbenannt",
     "loading": "Lädt...",
-    "showMore": "Weitere Sitzungen anzeigen"
+    "showMore": "Weitere Sitzungen anzeigen",
+    "flatViewNote": "Zeigt aktuelle Sitzungen aus jedem Projekt.",
+    "switchToGrouped": "Zur gruppierten Ansicht wechseln für ältere Sitzungen."
+  },
+  "viewMode": {
+    "grouped": "Gruppiert",
+    "flat": "Aktuell",
+    "groupedTooltip": "Sitzungen nach Projekt gruppieren",
+    "flatTooltip": "Alle Sitzungen nach Aktualität anzeigen"
   },
   "tooltips": {
     "viewEnvironments": "Umgebungen anzeigen",

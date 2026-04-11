@@ -128,6 +128,12 @@
       "alphabetical": "按字母顺序",
       "recentActivity": "最近活动"
     },
+    "sidebarViewMode": {
+      "label": "侧边栏视图",
+      "description": "按项目组织侧边栏，或作为按最近时间排序的扁平会话列表",
+      "grouped": "按项目分组",
+      "flat": "最近会话"
+    },
     "codeEditor": {
       "title": "代码编辑器",
       "theme": {

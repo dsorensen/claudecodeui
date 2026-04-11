@@ -10,14 +10,19 @@ import type {
   ProjectSortOrder,
   SessionDeleteConfirmation,
   SessionWithProvider,
+  SidebarViewMode,
 } from '../types/types';
 import {
+  filterFlatSessions,
   filterProjects,
   getAllSessions,
+  getAllSessionsAcrossProjects,
   loadStarredProjects,
   persistStarredProjects,
   readProjectSortOrder,
+  readSidebarViewMode,
   sortProjects,
+  writeSidebarViewMode,
 } from '../utils/utils';
 
 type SnippetHighlight = {
@@ -100,6 +105,7 @@ export function useSidebarController({
   const [initialSessionsLoaded, setInitialSessionsLoaded] = useState<Set<string>>(new Set());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [projectSortOrder, setProjectSortOrder] = useState<ProjectSortOrder>('name');
+  const [sidebarViewMode, setSidebarViewModeState] = useState<SidebarViewMode>('grouped');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [projectHasMoreOverrides, setProjectHasMoreOverrides] = useState<Record<string, boolean>>({});
   const [editingSession, setEditingSession] = useState<string | null>(null);
@@ -160,15 +166,16 @@ export function useSidebarController({
   }, [projects, isLoading]);
 
   useEffect(() => {
-    const loadSortOrder = () => {
+    const loadAppearancePrefs = () => {
       setProjectSortOrder(readProjectSortOrder());
+      setSidebarViewModeState(readSidebarViewMode());
     };
 
-    loadSortOrder();
+    loadAppearancePrefs();
 
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'claude-settings') {
-        loadSortOrder();
+        loadAppearancePrefs();
       }
     };
 
@@ -176,7 +183,7 @@ export function useSidebarController({
 
     const interval = setInterval(() => {
       if (document.hasFocus()) {
-        loadSortOrder();
+        loadAppearancePrefs();
       }
     }, 1000);
 
@@ -184,6 +191,11 @@ export function useSidebarController({
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
+  }, []);
+
+  const setSidebarViewMode = useCallback((mode: SidebarViewMode) => {
+    writeSidebarViewMode(mode);
+    setSidebarViewModeState(mode);
   }, []);
 
   // Debounced conversation search with SSE streaming
@@ -361,6 +373,16 @@ export function useSidebarController({
   const filteredProjects = useMemo(
     () => filterProjects(sortedProjects, searchFilter),
     [searchFilter, sortedProjects],
+  );
+
+  const flatSessions = useMemo(
+    () => getAllSessionsAcrossProjects(projectsWithSessionMeta, additionalSessions),
+    [projectsWithSessionMeta, additionalSessions],
+  );
+
+  const filteredFlatSessions = useMemo(
+    () => filterFlatSessions(flatSessions, projectsWithSessionMeta, searchFilter, t),
+    [flatSessions, projectsWithSessionMeta, searchFilter, t],
   );
 
   const startEditing = useCallback((project: Project) => {
@@ -590,6 +612,8 @@ export function useSidebarController({
     initialSessionsLoaded,
     currentTime,
     projectSortOrder,
+    sidebarViewMode,
+    setSidebarViewMode,
     isRefreshing,
     editingSession,
     editingSessionName,
@@ -600,6 +624,7 @@ export function useSidebarController({
     showVersionModal,
     starredProjects,
     filteredProjects,
+    filteredFlatSessions,
     toggleProject,
     handleSessionClick,
     toggleStarProject,

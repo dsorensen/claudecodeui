@@ -29,10 +29,20 @@
     "deleteSession": "セッションを削除",
     "renameSession": "セッション名を変更",
     "noSessions": "セッションはまだありません",
+    "noSessionsDescription": "すべてのプロジェクトの最近のセッションがここに表示されます",
+    "noMatchingSessions": "一致するセッションがありません",
     "loadingSessions": "セッションを読み込んでいます...",
     "unnamed": "名称未設定",
     "loading": "読み込み中...",
-    "showMore": "さらにセッションを表示"
+    "showMore": "さらにセッションを表示",
+    "flatViewNote": "各プロジェクトの最近のセッションを表示しています。",
+    "switchToGrouped": "古いセッションはグループ表示に切り替えてください。"
+  },
+  "viewMode": {
+    "grouped": "グループ",
+    "flat": "最近",
+    "groupedTooltip": "プロジェクトごとにセッションをグループ化",
+    "flatTooltip": "すべてのセッションを最新順に表示"
   },
   "tooltips": {
     "viewEnvironments": "環境を表示",

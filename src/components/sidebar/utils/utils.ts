@@ -6,6 +6,7 @@ import type {
   SettingsProject,
   SessionViewModel,
   SessionWithProvider,
+  SidebarViewMode,
 } from '../types/types';
 
 export const readProjectSortOrder = (): ProjectSortOrder => {
@@ -19,6 +20,31 @@ export const readProjectSortOrder = (): ProjectSortOrder => {
     return settings.projectSortOrder === 'date' ? 'date' : 'name';
   } catch {
     return 'name';
+  }
+};
+
+export const readSidebarViewMode = (): SidebarViewMode => {
+  try {
+    const rawSettings = localStorage.getItem('claude-settings');
+    if (!rawSettings) {
+      return 'grouped';
+    }
+
+    const settings = JSON.parse(rawSettings) as { sidebarViewMode?: SidebarViewMode };
+    return settings.sidebarViewMode === 'flat' ? 'flat' : 'grouped';
+  } catch {
+    return 'grouped';
+  }
+};
+
+export const writeSidebarViewMode = (mode: SidebarViewMode) => {
+  try {
+    const rawSettings = localStorage.getItem('claude-settings');
+    const existing = rawSettings ? (JSON.parse(rawSettings) as Record<string, unknown>) : {};
+    const next = { ...existing, sidebarViewMode: mode, lastUpdated: new Date().toISOString() };
+    localStorage.setItem('claude-settings', JSON.stringify(next));
+  } catch {
+    // Keep UI responsive even if storage fails.
   }
 };
 
@@ -173,6 +199,63 @@ export const sortProjects = (
   });
 
   return byName;
+};
+
+export const getAllSessionsAcrossProjects = (
+  projects: Project[],
+  additionalSessions: AdditionalSessionsByProject,
+): SessionWithProvider[] => {
+  const tagged: SessionWithProvider[] = [];
+  for (const project of projects) {
+    const projectSessions = getAllSessions(project, additionalSessions);
+    for (const session of projectSessions) {
+      tagged.push({ ...session, __projectName: project.name });
+    }
+  }
+
+  return tagged.sort(
+    (a, b) => getSessionDate(b).getTime() - getSessionDate(a).getTime(),
+  );
+};
+
+export const filterFlatSessions = (
+  sessions: SessionWithProvider[],
+  projects: Project[],
+  searchFilter: string,
+  t: TFunction,
+): SessionWithProvider[] => {
+  const normalizedSearch = searchFilter.trim().toLowerCase();
+  if (!normalizedSearch) {
+    return sessions;
+  }
+
+  const projectDisplayByName = new Map<string, string>();
+  for (const project of projects) {
+    projectDisplayByName.set(
+      project.name,
+      (project.displayName || project.name).toLowerCase(),
+    );
+  }
+
+  return sessions.filter((session) => {
+    const sessionTitle = getSessionName(session, t).toLowerCase();
+    if (sessionTitle.includes(normalizedSearch)) {
+      return true;
+    }
+
+    const projectName = session.__projectName;
+    if (projectName) {
+      const display = projectDisplayByName.get(projectName);
+      if (display && display.includes(normalizedSearch)) {
+        return true;
+      }
+      if (projectName.toLowerCase().includes(normalizedSearch)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
 };
 
 export const filterProjects = (projects: Project[], searchFilter: string): Project[] => {

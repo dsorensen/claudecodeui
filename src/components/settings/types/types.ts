@@ -4,6 +4,7 @@ export type SettingsMainTab = 'agents' | 'appearance' | 'git' | 'api' | 'tasks' 
 export type AgentProvider = 'claude' | 'cursor' | 'codex' | 'gemini';
 export type AgentCategory = 'account' | 'permissions' | 'mcp';
 export type ProjectSortOrder = 'name' | 'date';
+export type SidebarViewMode = 'grouped' | 'flat';
 export type SaveStatus = 'success' | 'error' | null;
 export type CodexPermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions';
 export type GeminiPermissionMode = 'default' | 'auto_edit' | 'yolo';

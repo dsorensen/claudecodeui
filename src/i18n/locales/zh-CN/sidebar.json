@@ -29,10 +29,20 @@
     "deleteSession": "删除会话",
     "renameSession": "重命名会话",
     "noSessions": "暂无会话",
+    "noSessionsDescription": "所有项目的最近会话将显示在这里",
+    "noMatchingSessions": "没有匹配的会话",
     "loadingSessions": "加载会话中...",
     "unnamed": "未命名",
     "loading": "加载中...",
-    "showMore": "显示更多会话"
+    "showMore": "显示更多会话",
+    "flatViewNote": "正在显示每个项目的最近会话。",
+    "switchToGrouped": "切换到分组视图以查看更早的会话。"
+  },
+  "viewMode": {
+    "grouped": "分组",
+    "flat": "最近",
+    "groupedTooltip": "按项目分组会话",
+    "flatTooltip": "按时间顺序显示所有会话"
   },
   "tooltips": {
     "viewEnvironments": "查看环境",
