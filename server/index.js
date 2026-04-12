@@ -1449,17 +1449,33 @@ wss.on('connection', (ws, request) => {
  *
  * Provider files use `createNormalizedMessage()` from `providers/types.js` and
  * adapter `normalizeMessage()` to produce unified NormalizedMessage events.
- * The writer simply serialises and sends.
+ * The writer serialises and sends, and also buffers events so a client that
+ * disconnects mid-run (page refresh, mobile tab suspend, flaky network) can
+ * replay anything it missed when its WebSocket reconnects.
  */
+const REPLAY_BUFFER_MAX = 2000;
+
 class WebSocketWriter {
     constructor(ws, userId = null) {
         this.ws = ws;
         this.sessionId = null;
         this.userId = userId;
         this.isWebSocketWriter = true;  // Marker for transport detection
+        // Bounded ring of events emitted during this run. Replayed to the
+        // new socket on `updateWebSocket()` so reconnecting clients catch
+        // up on streaming chunks AND terminal `complete`/`error` events.
+        // Without this, closing the page mid-response leaves the UI stuck
+        // on "Processing" because the terminal event is dropped on a
+        // closed WebSocket and never re-sent.
+        this.replayBuffer = [];
     }
 
     send(data) {
+        // Always buffer so reconnects can replay missed events.
+        this.replayBuffer.push(data);
+        if (this.replayBuffer.length > REPLAY_BUFFER_MAX) {
+            this.replayBuffer.shift();
+        }
         if (this.ws.readyState === 1) { // WebSocket.OPEN
             this.ws.send(JSON.stringify(data));
         }
@@ -1467,6 +1483,17 @@ class WebSocketWriter {
 
     updateWebSocket(newRawWs) {
         this.ws = newRawWs;
+        // Flush buffered events to the new socket so the client sees
+        // everything that streamed while it was disconnected, including
+        // any terminal event that unblocks its UI.
+        if (newRawWs.readyState !== 1) return;
+        for (const data of this.replayBuffer) {
+            try {
+                newRawWs.send(JSON.stringify(data));
+            } catch {
+                // Best-effort replay; a failed write is not fatal.
+            }
+        }
     }
 
     setSessionId(sessionId) {
@@ -1573,11 +1600,13 @@ function handleChatConnection(ws, request) {
                 } else {
                     // Use Claude Agents SDK
                     isActive = isClaudeSDKSessionActive(sessionId);
-                    if (isActive) {
-                        // Reconnect the session's writer to the new WebSocket so
-                        // subsequent SDK output flows to the refreshed client.
-                        reconnectSessionWriter(sessionId, ws);
-                    }
+                    // Always attempt reconnect — including for sessions that
+                    // completed while the client was disconnected. The writer
+                    // is kept around in a 'completed' state for a grace period
+                    // (see markSessionCompleted in claude-sdk.js) so its
+                    // replay buffer can flush any missed terminal events
+                    // (`complete`/`error`) and unblock the client's UI.
+                    reconnectSessionWriter(sessionId, ws);
                 }
 
                 writer.send({
