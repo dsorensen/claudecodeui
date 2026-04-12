@@ -225,6 +225,28 @@ const server = http.createServer(app);
 
 const ptySessionsMap = new Map();
 const PTY_SESSION_TIMEOUT = 30 * 60 * 1000;
+
+/**
+ * Finds a PTY session (if any) running for the given agent session id.
+ * Used to detect chat <-> shell conflicts on the same Claude session,
+ * including dormant PTYs still inside their 30-minute reconnect grace.
+ *
+ * Two processes driving the same Claude session id write to the same
+ * `~/.claude/projects/<encoded-cwd>/<sessionId>.jsonl` with no locking
+ * and each keeps its own in-memory view — see DEV-57 in the tracker.
+ *
+ * @param {string} sessionId - Agent session id to look up
+ * @returns {{ key: string, entry: object } | null}
+ */
+function findPtyForSessionId(sessionId) {
+    if (!sessionId) return null;
+    for (const [key, entry] of ptySessionsMap.entries()) {
+        if (entry.sessionId === sessionId) {
+            return { key, entry };
+        }
+    }
+    return null;
+}
 const SHELL_URL_PARSE_BUFFER_LIMIT = 32768;
 const ANSI_ESCAPE_SEQUENCE_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1B\\))/g;
 const TRAILING_URL_PUNCTUATION_REGEX = /[)\]}>.,;:!?]+$/;
@@ -1497,6 +1519,26 @@ function handleChatConnection(ws, request) {
                 console.log('📁 Project:', data.options?.projectPath || 'Unknown');
                 console.log('🔄 Session:', data.options?.sessionId ? 'Resume' : 'New');
 
+                // Conflict guard: refuse if a shell PTY is still running for
+                // this session id (including dormant tabs in the 30-minute
+                // reconnect grace). Running the chat SDK child concurrently
+                // with the shell's `claude --resume` child would produce two
+                // writers on the same session file — see DEV-57.
+                if (data.options?.sessionId) {
+                    const conflict = findPtyForSessionId(data.options.sessionId);
+                    if (conflict) {
+                        const shortId = data.options.sessionId.slice(0, 8);
+                        console.warn(`[WARN] Chat refused: shell PTY owns session ${data.options.sessionId}`);
+                        writer.send(createNormalizedMessage({
+                            kind: 'error',
+                            content: `A shell is still active for this conversation (session ${shortId}…). Close the shell tab or type \`exit\` in it before sending a chat message, or start a new conversation.`,
+                            sessionId: data.options.sessionId,
+                            provider: 'claude',
+                        }));
+                        return;
+                    }
+                }
+
                 // Use Claude Agents SDK
                 await queryClaudeSDK(data.command, data.options, writer);
             } else if (data.type === 'cursor-command') {
@@ -1698,6 +1740,30 @@ function handleShellConnection(ws) {
                     existingSession.ws = ws;
 
                     return;
+                }
+
+                // Conflict guard (symmetric to the chat-side check in
+                // `handleChatConnection`): refuse to spawn a new PTY that
+                // would run `claude --resume <sessionId>` while the chat SDK
+                // is actively processing the same session. Two live Claude
+                // Code children on the same session id produce concurrent
+                // writers on the session .jsonl — see DEV-57.
+                //
+                // We only block on `status === 'active'` (the SDK child is
+                // alive); the post-run grace window introduced for replay
+                // buffering does not spawn a second writer and is safe.
+                // Scope limited to Claude for now; cursor/codex/gemini have
+                // analogous races but are out of scope for this change.
+                if (provider === 'claude' && hasSession && sessionId && !isPlainShell) {
+                    if (isClaudeSDKSessionActive(sessionId)) {
+                        const shortId = sessionId.slice(0, 8);
+                        console.warn(`[WARN] Shell refused: chat is processing session ${sessionId}`);
+                        ws.send(JSON.stringify({
+                            type: 'output',
+                            data: `\r\n\x1b[31mError: chat is still processing this conversation (session ${shortId}…). Wait for it to finish (or abort it) before opening a shell for this session.\x1b[0m\r\n`
+                        }));
+                        return;
+                    }
                 }
 
                 console.log('[INFO] Starting shell in:', projectPath);
