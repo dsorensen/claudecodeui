@@ -9,6 +9,47 @@ import GitHubStarBadge from './GitHubStarBadge';
 const MOD_KEY =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 
+type ViewModeToggleProps = {
+  flatSessionView: boolean;
+  onFlatSessionViewChange: (value: boolean) => void;
+  t: TFunction;
+};
+
+function ViewModeToggle({ flatSessionView, onFlatSessionViewChange, t }: ViewModeToggleProps) {
+  return (
+    <div className="flex rounded-lg bg-muted/50 p-0.5">
+      <button
+        onClick={() => onFlatSessionViewChange(false)}
+        aria-pressed={!flatSessionView}
+        title={t('viewMode.groupedTooltip')}
+        className={cn(
+          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+          !flatSessionView
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
+        )}
+      >
+        <LayoutList className="h-3 w-3" />
+        {t('viewMode.grouped')}
+      </button>
+      <button
+        onClick={() => onFlatSessionViewChange(true)}
+        aria-pressed={flatSessionView}
+        title={t('viewMode.flatTooltip')}
+        className={cn(
+          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+          flatSessionView
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
+        )}
+      >
+        <History className="h-3 w-3" />
+        {t('viewMode.flat')}
+      </button>
+    </div>
+  );
+}
+
 type SidebarHeaderProps = {
   isPWA: boolean;
   isMobile: boolean;
@@ -65,39 +106,6 @@ export default function SidebarHeader({
         </svg>
       </div>
       <h1 className="truncate text-sm font-semibold tracking-tight text-foreground">{t('app.title')}</h1>
-    </div>
-  );
-
-  const ViewModeToggle = () => (
-    <div className="flex rounded-lg bg-muted/50 p-0.5">
-      <button
-        onClick={() => onFlatSessionViewChange(false)}
-        aria-pressed={!flatSessionView}
-        title={t('viewMode.groupedTooltip')}
-        className={cn(
-          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
-          !flatSessionView
-            ? 'bg-background shadow-sm text-foreground'
-            : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        <LayoutList className="h-3 w-3" />
-        {t('viewMode.grouped')}
-      </button>
-      <button
-        onClick={() => onFlatSessionViewChange(true)}
-        aria-pressed={flatSessionView}
-        title={t('viewMode.flatTooltip')}
-        className={cn(
-          'flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
-          flatSessionView
-            ? 'bg-background shadow-sm text-foreground'
-            : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        <History className="h-3 w-3" />
-        {t('viewMode.flat')}
-      </button>
     </div>
   );
 
@@ -162,7 +170,7 @@ export default function SidebarHeader({
         {/* Search bar */}
         {showSearchTools && (
           <div className="mt-2.5 space-y-2">
-            <ViewModeToggle />
+            <ViewModeToggle flatSessionView={flatSessionView} onFlatSessionViewChange={onFlatSessionViewChange} t={t} />
             {/* Search mode toggle */}
             <div className="flex rounded-lg bg-muted/50 p-0.5">
               <button
@@ -281,7 +289,7 @@ export default function SidebarHeader({
         {/* Mobile search */}
         {showSearchTools && (
           <div className="mt-2.5 space-y-2">
-            <ViewModeToggle />
+            <ViewModeToggle flatSessionView={flatSessionView} onFlatSessionViewChange={onFlatSessionViewChange} t={t} />
             <div className="flex rounded-lg bg-muted/50 p-0.5">
               <button
                 onClick={() => onSearchModeChange('projects')}

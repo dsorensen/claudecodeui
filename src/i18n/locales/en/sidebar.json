@@ -35,7 +35,7 @@
     "showMore": "Show more sessions",
     "noSessionsDescription": "Your recent sessions from all projects will appear here",
     "noMatchingSessions": "No matching sessions",
-    "flatViewNote": "Showing recent sessions from each project.",
+    "flatViewNote": "Showing already-loaded sessions from each project.",
     "switchToGrouped": "Switch to grouped view for older sessions."
   },
   "viewMode": {
