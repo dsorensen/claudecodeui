@@ -10,6 +10,7 @@ import SessionProviderLogo from '../../../llm-logo-provider/SessionProviderLogo'
 import SidebarFooter from './SidebarFooter';
 import SidebarHeader from './SidebarHeader';
 import SidebarProjectList, { type SidebarProjectListProps } from './SidebarProjectList';
+import SidebarFlatSessionList, { type SidebarFlatSessionListProps } from './SidebarFlatSessionList';
 import { getAllSessions } from '../../utils/utils';
 
 function HighlightedSnippet({ snippet, highlights }: { snippet: string; highlights: { start: number; end: number }[] }) {
@@ -144,6 +145,9 @@ type SidebarContentProps = {
   onShowVersionModal: () => void;
   onShowSettings: () => void;
   projectListProps: SidebarProjectListProps;
+  flatSessionView: boolean;
+  onFlatSessionViewChange: (value: boolean) => void;
+  flatListProps: SidebarFlatSessionListProps;
   t: TFunction;
 };
 
@@ -180,6 +184,9 @@ export default function SidebarContent({
   onShowVersionModal,
   onShowSettings,
   projectListProps,
+  flatSessionView,
+  onFlatSessionViewChange,
+  flatListProps,
   t,
 }: SidebarContentProps) {
   const showConversationSearch = searchMode === 'conversations' && searchFilter.trim().length >= 2;
@@ -207,6 +214,8 @@ export default function SidebarContent({
         isRefreshing={isRefreshing}
         onCreateProject={onCreateProject}
         onCollapseSidebar={onCollapseSidebar}
+        flatSessionView={flatSessionView}
+        onFlatSessionViewChange={onFlatSessionViewChange}
         t={t}
       />
 
@@ -508,6 +517,8 @@ export default function SidebarContent({
               ))}
             </div>
           )
+        ) : flatSessionView ? (
+          <SidebarFlatSessionList {...flatListProps} />
         ) : (
           <SidebarProjectList {...projectListProps} />
         )}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useDeviceSettings } from '../../../hooks/useDeviceSettings';
@@ -10,11 +10,13 @@ import { usePaletteOps } from '../../../contexts/PaletteOpsContext';
 import { useTasksSettings } from '../../../contexts/TasksSettingsContext';
 import type { Project, LLMProvider } from '../../../types/app';
 import type { MCPServerStatus, SidebarProps } from '../types/types';
+import { filterFlatSessions, getAllSessionsAcrossProjects } from '../utils/utils';
 
 import SidebarCollapsed from './subcomponents/SidebarCollapsed';
 import SidebarContent from './subcomponents/SidebarContent';
 import SidebarModals from './subcomponents/SidebarModals';
 import type { SidebarProjectListProps } from './subcomponents/SidebarProjectList';
+import type { SidebarFlatSessionListProps } from './subcomponents/SidebarFlatSessionList';
 
 type TaskMasterSidebarContext = {
   setCurrentProject: (project: Project) => void;
@@ -47,7 +49,7 @@ function Sidebar({
     'claudecodeui',
   );
   const { preferences, setPreference } = useUiPreferences();
-  const { sidebarVisible } = preferences;
+  const { sidebarVisible, flatSessionView } = preferences;
   const { setCurrentProject, mcpServerStatus } = useTaskMaster() as TaskMasterSidebarContext;
   const { tasksEnabled } = useTasksSettings();
   const paletteOps = usePaletteOps();
@@ -189,6 +191,64 @@ function Sidebar({
     t,
   };
 
+  const projectsById = useMemo(
+    () => new Map(projects.map((project) => [project.projectId, project])),
+    [projects],
+  );
+
+  const flatSessions = useMemo(() => getAllSessionsAcrossProjects(projects), [projects]);
+
+  const filteredFlatSessions = useMemo(
+    () => filterFlatSessions(flatSessions, projects, searchFilter, t),
+    [flatSessions, projects, searchFilter, t],
+  );
+
+  const flatSessionsTotal = useMemo(
+    () =>
+      projects.reduce(
+        (acc, project) =>
+          acc +
+          (project.sessions?.length || 0) +
+          (project.cursorSessions?.length || 0) +
+          (project.codexSessions?.length || 0) +
+          (project.geminiSessions?.length || 0) +
+          (project.opencodeSessions?.length || 0),
+        0,
+      ),
+    [projects],
+  );
+
+  const flatListProps: SidebarFlatSessionListProps = {
+    projects,
+    projectsById,
+    filteredFlatSessions,
+    flatSessionsTotal,
+    selectedSession,
+    isLoading,
+    loadingProgress,
+    currentTime,
+    editingSession,
+    editingSessionName,
+    searchFilter,
+    onEditingSessionNameChange: setEditingSessionName,
+    onStartEditingSession: (sessionId, initialName) => {
+      setEditingSession(sessionId);
+      setEditingSessionName(initialName);
+    },
+    onCancelEditingSession: () => {
+      setEditingSession(null);
+      setEditingSessionName('');
+    },
+    onSaveEditingSession: (projectId: string, sessionId: string, summary: string, provider: LLMProvider) => {
+      void updateSessionSummary(projectId, sessionId, summary, provider);
+    },
+    onProjectSelect: handleProjectSelect,
+    onSessionSelect: handleSessionClick,
+    onDeleteSession: showDeleteSessionConfirmation,
+    onSwitchToGroupedView: () => setPreference('flatSessionView', false),
+    t,
+  };
+
   return (
     <>
         <SidebarModals
@@ -296,6 +356,9 @@ function Sidebar({
             onShowVersionModal={() => setShowVersionModal(true)}
             onShowSettings={onShowSettings}
             projectListProps={projectListProps}
+            flatSessionView={flatSessionView}
+            onFlatSessionViewChange={(value) => setPreference('flatSessionView', value)}
+            flatListProps={flatListProps}
             t={t}
           />
         </>
