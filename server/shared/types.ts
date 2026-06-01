@@ -68,6 +68,17 @@ export type AuthenticatedWebSocketRequest = IncomingMessage & {
 export type LLMProvider = 'claude' | 'codex' | 'gemini' | 'cursor' | 'opencode';
 
 /**
+ * One configured Claude profile. `id` is the provider instance id ("claude" for
+ * the default profile, "claude:<name>" for additional profiles). `configDir` is
+ * that profile's CLAUDE_CONFIG_DIR.
+ */
+export type ClaudeProfile = {
+  id: string;
+  label: string;
+  configDir: string;
+};
+
+/**
  * One selectable model row (matches the documentation `public/modelConstants.js` option shape).
  */
 export type ProviderModelOption = {
