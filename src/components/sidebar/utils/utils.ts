@@ -73,6 +73,33 @@ export const getSessionTime = (session: SessionWithProvider): string => {
   return getUpdatedTimestamp(session) || getCreatedTimestamp(session);
 };
 
+/**
+ * Compact relative time for sidebar rows: <1m, Xm, Xhr, Xd.
+ */
+export const formatCompactSessionAge = (dateString: string, currentTime: Date): string => {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const diffInMinutes = Math.floor(Math.max(0, currentTime.getTime() - date.getTime()) / (1000 * 60));
+  if (diffInMinutes < 1) {
+    return '<1m';
+  }
+
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}hr`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays}d`;
+};
+
 export const createSessionViewModel = (
   session: SessionWithProvider,
   currentTime: Date,
@@ -122,6 +149,55 @@ export const getAllSessions = (project: Project): SessionWithProvider[] => {
   return [...claudeSessions, ...cursorSessions, ...codexSessions, ...geminiSessions, ...opencodeSessions].sort(
     (a, b) => getSessionDate(b).getTime() - getSessionDate(a).getTime(),
   );
+};
+
+export const getAllSessionsAcrossProjects = (projects: Project[]): SessionWithProvider[] => {
+  const tagged: SessionWithProvider[] = [];
+
+  for (const project of projects) {
+    for (const session of getAllSessions(project)) {
+      tagged.push({ ...session, __projectId: project.projectId });
+    }
+  }
+
+  return tagged.sort((a, b) => getSessionDate(b).getTime() - getSessionDate(a).getTime());
+};
+
+export const filterFlatSessions = (
+  sessions: SessionWithProvider[],
+  projects: Project[],
+  searchFilter: string,
+  t: TFunction,
+): SessionWithProvider[] => {
+  const normalizedSearch = searchFilter.trim().toLowerCase();
+  if (!normalizedSearch) {
+    return sessions;
+  }
+
+  const projectDisplayById = new Map<string, string>();
+  for (const project of projects) {
+    projectDisplayById.set(project.projectId, (project.displayName || project.projectId).toLowerCase());
+  }
+
+  return sessions.filter((session) => {
+    const sessionTitle = getSessionName(session, t).toLowerCase();
+    if (sessionTitle.includes(normalizedSearch)) {
+      return true;
+    }
+
+    const projectId = session.__projectId;
+    if (projectId) {
+      const display = projectDisplayById.get(projectId);
+      if (display && display.includes(normalizedSearch)) {
+        return true;
+      }
+      if (projectId.toLowerCase().includes(normalizedSearch)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
 };
 
 export const getProjectLastActivity = (project: Project): Date => {
