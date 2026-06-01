@@ -22,8 +22,17 @@ type ParsedSession = {
  * Session indexer for Claude transcript artifacts.
  */
 export class ClaudeSessionSynchronizer implements IProviderSessionSynchronizer {
-  private readonly provider = 'claude' as const;
-  private readonly claudeHome = getClaudeConfigDir();
+  private readonly provider: string;
+  private readonly explicitConfigDir?: string;
+
+  constructor(id: string = 'claude', configDir?: string) {
+    this.provider = id;
+    this.explicitConfigDir = configDir;
+  }
+
+  private get claudeHome(): string {
+    return this.explicitConfigDir ?? getClaudeConfigDir();
+  }
 
   /**
    * Scans ~/.claude/projects and upserts discovered sessions into DB.

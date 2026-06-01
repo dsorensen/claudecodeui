@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { McpProvider } from '@/modules/providers/shared/mcp/mcp.provider.js';
-import { getClaudeJsonPath } from '@/shared/claude-config-dir.js';
+import { getClaudeConfigDir, getClaudeJsonPathForDir } from '@/shared/claude-config-dir.js';
 import type { McpScope, ProviderMcpServer, UpsertProviderMcpServerInput } from '@/shared/types.js';
 import {
   AppError,
@@ -14,8 +14,15 @@ import {
 } from '@/shared/utils.js';
 
 export class ClaudeMcpProvider extends McpProvider {
-  constructor() {
+  private readonly explicitConfigDir?: string;
+
+  constructor(configDir?: string) {
     super('claude', ['user', 'local', 'project'], ['stdio', 'http', 'sse']);
+    this.explicitConfigDir = configDir;
+  }
+
+  private get configDir(): string {
+    return this.explicitConfigDir ?? getClaudeConfigDir();
   }
 
   protected async readScopedServers(scope: McpScope, workspacePath: string): Promise<Record<string, unknown>> {
@@ -25,7 +32,7 @@ export class ClaudeMcpProvider extends McpProvider {
       return readObjectRecord(config.mcpServers) ?? {};
     }
 
-    const filePath = getClaudeJsonPath();
+    const filePath = getClaudeJsonPathForDir(this.configDir);
     const config = await readJsonConfig(filePath);
     if (scope === 'user') {
       return readObjectRecord(config.mcpServers) ?? {};
@@ -49,7 +56,7 @@ export class ClaudeMcpProvider extends McpProvider {
       return;
     }
 
-    const filePath = getClaudeJsonPath();
+    const filePath = getClaudeJsonPathForDir(this.configDir);
     const config = await readJsonConfig(filePath);
     if (scope === 'user') {
       config.mcpServers = servers;

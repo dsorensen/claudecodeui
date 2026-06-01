@@ -17,8 +17,6 @@ import {
   readProviderSkillMarkdownDefinition,
 } from '@/shared/utils.js';
 
-const getClaudeHomePath = (): string => getClaudeConfigDir();
-
 const getClaudePluginName = (pluginId: string): string | null => {
   const normalizedPluginId = pluginId.trim();
   if (!normalizedPluginId || normalizedPluginId === '@') {
@@ -71,19 +69,26 @@ const readClaudePluginName = async (
 };
 
 export class ClaudeSkillsProvider extends SkillsProvider {
-  constructor() {
+  private readonly explicitConfigDir?: string;
+
+  constructor(configDir?: string) {
     super('claude');
+    this.explicitConfigDir = configDir;
+  }
+
+  private get configDir(): string {
+    return this.explicitConfigDir ?? getClaudeConfigDir();
   }
 
   async listSkills(options?: ProviderSkillListOptions): Promise<ProviderSkill[]> {
     return [
       ...(await super.listSkills(options)),
-      ...(await this.listPluginSkills(getClaudeHomePath())),
+      ...(await this.listPluginSkills(this.configDir)),
     ];
   }
 
   protected async getSkillSources(workspacePath: string): Promise<ProviderSkillSource[]> {
-    const claudeHomePath = getClaudeHomePath();
+    const claudeHomePath = this.configDir;
 
     return [
       {

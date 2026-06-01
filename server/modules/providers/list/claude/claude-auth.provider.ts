@@ -21,6 +21,16 @@ const hasErrorCode = (error: unknown, code: string): boolean => (
 );
 
 export class ClaudeProviderAuth implements IProviderAuth {
+  private readonly explicitConfigDir?: string;
+
+  constructor(configDir?: string) {
+    this.explicitConfigDir = configDir;
+  }
+
+  private get configDir(): string {
+    return this.explicitConfigDir ?? getClaudeConfigDir();
+  }
+
   /**
    * Checks whether the Claude Code CLI is available on this host.
    */
@@ -68,7 +78,7 @@ export class ClaudeProviderAuth implements IProviderAuth {
    */
   private async loadSettingsEnv(): Promise<Record<string, unknown>> {
     try {
-      const settingsPath = path.join(getClaudeConfigDir(), 'settings.json');
+      const settingsPath = path.join(this.configDir, 'settings.json');
       const content = await readFile(settingsPath, 'utf8');
       const settings = readObjectRecord(JSON.parse(content));
       return readObjectRecord(settings?.env) ?? {};
@@ -97,7 +107,7 @@ export class ClaudeProviderAuth implements IProviderAuth {
     }
 
     try {
-      const credPath = path.join(getClaudeConfigDir(), '.credentials.json');
+      const credPath = path.join(this.configDir, '.credentials.json');
       const content = await readFile(credPath, 'utf8');
       const creds = readObjectRecord(JSON.parse(content)) ?? {};
       const oauth = readObjectRecord(creds.claudeAiOauth);
