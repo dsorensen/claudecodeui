@@ -46,3 +46,11 @@ export function loadClaudeProfiles(): ClaudeProfile[] {
 
   return parsed;
 }
+
+/**
+ * Returns the configDir for a configured Claude profile instance id, or
+ * undefined if no profile with that id is configured.
+ */
+export function getClaudeProfileConfigDir(id: string): string | undefined {
+  return loadClaudeProfiles().find((profile) => profile.id === id)?.configDir;
+}
