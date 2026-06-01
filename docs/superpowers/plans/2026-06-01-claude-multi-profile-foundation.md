@@ -784,12 +784,21 @@ git commit -m "feat(providers): build a Claude provider instance per configured 
 
 ---
 
+## As-built deviations (Plan 1 implemented — recorded for accuracy)
+
+The implementation deviated from the task code above in three sound ways; follow the as-built shape, not the original snippets, when authoring Plan 2:
+
+1. **Lazy config-dir resolution (Tasks 5–6).** Instead of eager capture (`constructor(configDir: string = getClaudeConfigDir())` into a `readonly configDir`), each filesystem sub-provider stores `private readonly explicitConfigDir?: string` and resolves via `private get configDir() { return this.explicitConfigDir ?? getClaudeConfigDir(); }`. Reason: the registry constructs providers at module-import time; eager capture freezes the dir at import and breaks `skills.test.ts`'s per-test env patching. `ClaudeProvider`'s constructor is `(id = 'claude', configDir?: string)` — it passes `configDir` straight through (no `getClaudeConfigDir` import) so `undefined` keeps sub-providers lazy.
+2. **Registry preserves laziness for the implicit default (Task 7).** `buildProviderRegistry()` checks `const hasExplicitProfiles = Boolean(process.env.CLAUDE_PROFILES?.trim())` and constructs the default profile as `new ClaudeProvider(profile.id)` (no dir → lazy) when no profiles are configured, only passing `profile.configDir` when profiles are explicitly set.
+3. **No `baseProviderOf` wrap needed for session writes.** `sessionsDb.createSession(provider: string, ...)` already accepts a `string`, so the synchronizer tags sessions with the full instance `id` directly — instance ids flow to the DB with no schema change (de-risks Plan 2 session separation).
+
 ## Subsequent plans (roadmap — authored after Plan 1 lands)
 
 **Plan 2 — Runtime wiring (multi-profile works end-to-end via API):**
 - Session watcher emits one entry per Claude profile (`<configDir>/projects`), tagging finds with the profile id; `claude-sdk.js` resolves the selected provider id → its `configDir` and sets `env.CLAUDE_CONFIG_DIR`; emitted chat messages carry the instance id instead of hardcoded `'claude'`.
 - Generalize the ~6 literal `=== 'claude'` branches (`chat-websocket.service.ts:65`, `provider.routes.ts` `parseProvider`, `session-conversations-search.service.ts:1147/1239`, `git.js:987`, `agent.js:948`) via `isClaudeFamily` / `baseProviderOf`.
-- Verify the sessions DB `provider` column accepts instance ids and that sessions separate per profile.
+- **Undo the three interim instance-id→base collapses** introduced in Task 4 to satisfy `LLMProvider`-typed slots, so per-profile separation is preserved (these are safe today only because `baseProviderOf('claude') === 'claude'` with a single profile): `mcp.service.ts:72,75` (`addMcpServerToAllProviders` would report duplicate `provider: 'claude'` rows), `session-synchronizer.service.ts:21-27,32` (the `processedByProvider: Record<LLMProvider, number>` aggregation buckets by base and collides across profiles), and `sessions.service.ts:78` (`listProviderIds()` would surface duplicate `'claude'`). These slots/return types must widen to carry the instance id.
+- Sessions DB already accepts a `string` provider (confirmed in Plan 1), so no schema migration is needed; verify sessions separate per profile end-to-end.
 
 **Plan 3 — UI:**
 - Provider picker lists configured profiles (labels from config, shared Claude icon resolved by `baseProvider`); per-profile auth status in the Agents settings tab; selection persistence keyed by full id (`claude-model` localStorage becomes profile-aware). Mirror the widened `LLMProvider`/`baseProvider` model in `src/types/app.ts` and the client keyed maps (`providerAuthStatus`, `FALLBACK_DEFAULT_MODEL`, `providerModelCatalog`).
