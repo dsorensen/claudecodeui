@@ -32,7 +32,17 @@
     "loadingSessions": "Oturumlar yükleniyor...",
     "unnamed": "Adsız",
     "loading": "Yükleniyor...",
-    "showMore": "Daha fazla oturum göster"
+    "showMore": "Daha fazla oturum göster",
+    "noSessionsDescription": "Your recent sessions from all projects will appear here",
+    "noMatchingSessions": "No matching sessions",
+    "flatViewNote": "Showing recent sessions from each project.",
+    "switchToGrouped": "Switch to grouped view for older sessions."
+  },
+  "viewMode": {
+    "grouped": "Grouped",
+    "flat": "Recent",
+    "groupedTooltip": "Group sessions by project",
+    "flatTooltip": "Show all sessions by recency"
   },
   "tooltips": {
     "viewEnvironments": "Ortamları Görüntüle",
