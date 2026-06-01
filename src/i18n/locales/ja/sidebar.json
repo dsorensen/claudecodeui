@@ -34,6 +34,12 @@
     "loading": "読み込み中...",
     "showMore": "さらにセッションを表示"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "環境を表示",
     "hideSidebar": "サイドバーを隠す",

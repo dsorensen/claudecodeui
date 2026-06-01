@@ -34,6 +34,12 @@
     "loading": "Lädt...",
     "showMore": "Weitere Sitzungen anzeigen"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "Umgebungen anzeigen",
     "hideSidebar": "Seitenleiste ausblenden",

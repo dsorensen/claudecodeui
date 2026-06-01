@@ -34,6 +34,12 @@
     "loading": "로딩 중...",
     "showMore": "더 많은 세션 보기"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "환경 보기",
     "hideSidebar": "사이드바 숨기기",

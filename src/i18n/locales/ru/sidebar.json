@@ -34,6 +34,12 @@
     "loading": "Загрузка...",
     "showMore": "Показать больше сеансов"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "Просмотр окружений",
     "hideSidebar": "Скрыть боковую панель",

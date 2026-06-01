@@ -34,6 +34,12 @@
     "loading": "Yükleniyor...",
     "showMore": "Daha fazla oturum göster"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "Ortamları Görüntüle",
     "hideSidebar": "Kenar çubuğunu gizle",

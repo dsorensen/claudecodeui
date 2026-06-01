@@ -34,6 +34,12 @@
     "loading": "加载中...",
     "showMore": "显示更多会话"
   },
+  "newSession": {
+    "tooltip": "New session",
+    "pickProject": "Pick a project",
+    "searchPlaceholder": "Search projects...",
+    "noMatches": "No matching projects"
+  },
   "tooltips": {
     "viewEnvironments": "查看环境",
     "hideSidebar": "隐藏侧边栏",

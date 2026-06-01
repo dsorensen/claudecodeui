@@ -1,10 +1,13 @@
-import { Archive, Folder, FolderPlus, MessageSquare, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
+import { useState } from 'react';
+import { Archive, Folder, FolderPlus, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { Button, Input, Tooltip } from '../../../../shared/view/ui';
 import { IS_PLATFORM } from '../../../../constants/config';
 import { cn } from '../../../../lib/utils';
+import type { Project } from '../../../../types/app';
 import type { SidebarSearchMode } from '../../types/types';
 import GitHubStarBadge from './GitHubStarBadge';
+import SidebarNewSessionPopover from './SidebarNewSessionPopover';
 
 const MOD_KEY =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
@@ -25,6 +28,9 @@ type SidebarHeaderProps = {
   isRefreshing: boolean;
   onCreateProject: () => void;
   onCollapseSidebar: () => void;
+  projects: Project[];
+  onNewSession: (project: Project) => void;
+  onProjectSelect: (project: Project) => void;
   t: TFunction;
 };
 
@@ -44,8 +50,17 @@ export default function SidebarHeader({
   isRefreshing,
   onCreateProject,
   onCollapseSidebar,
+  projects,
+  onNewSession,
+  onProjectSelect,
   t,
 }: SidebarHeaderProps) {
+  const [newSessionOpen, setNewSessionOpen] = useState(false);
+  const handleNewSessionFromPopover = (project: Project) => {
+    onProjectSelect(project);
+    onNewSession(project);
+    setNewSessionOpen(false);
+  };
   const showSearchTools = (projectsCount > 0 || archivedSessionsCount > 0 || isArchivedSessionsLoading) && !isLoading;
   const searchPlaceholder = searchMode === 'conversations'
     ? t('search.conversationsPlaceholder')
@@ -84,7 +99,7 @@ export default function SidebarHeader({
             <LogoBlock />
           )}
 
-          <div className="flex flex-shrink-0 items-center gap-0.5">
+          <div className="relative flex flex-shrink-0 items-center gap-0.5">
             <Button
               variant="ghost"
               size="sm"
@@ -108,6 +123,22 @@ export default function SidebarHeader({
             >
               <Plus className="h-3.5 w-3.5" />
             </Button>
+            {projects.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-haspopup="dialog"
+                aria-expanded={newSessionOpen}
+                className={cn(
+                  'h-7 w-7 rounded-lg p-0 text-muted-foreground hover:bg-accent/80 hover:text-foreground',
+                  newSessionOpen && 'bg-accent/60 text-foreground',
+                )}
+                onClick={() => setNewSessionOpen((open) => !open)}
+                title={t('newSession.tooltip')}
+              >
+                <MessageSquarePlus className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -117,6 +148,14 @@ export default function SidebarHeader({
             >
               <PanelLeftClose className="h-3.5 w-3.5" />
             </Button>
+            {newSessionOpen && !isMobile && (
+              <SidebarNewSessionPopover
+                projects={projects}
+                onSelectProject={handleNewSessionFromPopover}
+                onClose={() => setNewSessionOpen(false)}
+                t={t}
+              />
+            )}
           </div>
         </div>
 
@@ -223,7 +262,7 @@ export default function SidebarHeader({
             <LogoBlock />
           )}
 
-          <div className="flex flex-shrink-0 gap-1.5">
+          <div className="relative flex flex-shrink-0 gap-1.5">
             <button
               className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 transition-all active:scale-95"
               onClick={onRefresh}
@@ -231,12 +270,34 @@ export default function SidebarHeader({
             >
               <RefreshCw className={`h-4 w-4 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
+            {projects.length > 0 && (
+              <button
+                aria-haspopup="dialog"
+                aria-expanded={newSessionOpen}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 transition-all active:scale-95',
+                  newSessionOpen && 'bg-accent',
+                )}
+                onClick={() => setNewSessionOpen((open) => !open)}
+                title={t('newSession.tooltip')}
+              >
+                <MessageSquarePlus className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
             <button
               className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/90 text-primary-foreground transition-all active:scale-95"
               onClick={onCreateProject}
             >
               <FolderPlus className="h-4 w-4" />
             </button>
+            {newSessionOpen && isMobile && (
+              <SidebarNewSessionPopover
+                projects={projects}
+                onSelectProject={handleNewSessionFromPopover}
+                onClose={() => setNewSessionOpen(false)}
+                t={t}
+              />
+            )}
           </div>
         </div>
 
