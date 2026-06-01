@@ -23,7 +23,8 @@ import type {
  * logic for converting native events/history into the app's normalized shape.
  */
 export interface IProvider {
-  readonly id: LLMProvider;
+  readonly id: string;
+  readonly baseProvider: LLMProvider;
   readonly models: IProviderModels;
   readonly mcp: IProviderMcp;
   readonly auth: IProviderAuth;

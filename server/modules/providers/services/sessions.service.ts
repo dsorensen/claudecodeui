@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { projectsDb, sessionsDb } from '@/modules/database/index.js';
 import { providerRegistry } from '@/modules/providers/provider.registry.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 import type {
   FetchHistoryOptions,
   FetchHistoryResult,
@@ -74,7 +75,7 @@ export const sessionsService = {
    * Lists provider ids that can load session history and normalize live messages.
    */
   listProviderIds(): LLMProvider[] {
-    return providerRegistry.listProviders().map((provider) => provider.id);
+    return providerRegistry.listProviders().map((provider) => baseProviderOf(provider.id));
   },
 
   /**

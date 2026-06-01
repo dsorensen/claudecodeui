@@ -1,4 +1,5 @@
 import { providerRegistry } from '@/modules/providers/provider.registry.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 import type { LLMProvider, McpScope, ProviderMcpServer, UpsertProviderMcpServerInput } from '@/shared/types.js';
 import { AppError } from '@/shared/utils.js';
 
@@ -68,10 +69,10 @@ export const providerMcpService = {
     for (const provider of providers) {
       try {
         await provider.mcp.upsertServer({ ...input, scope });
-        results.push({ provider: provider.id, created: true });
+        results.push({ provider: baseProviderOf(provider.id), created: true });
       } catch (error) {
         results.push({
-          provider: provider.id,
+          provider: baseProviderOf(provider.id),
           created: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         });

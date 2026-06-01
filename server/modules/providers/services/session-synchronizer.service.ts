@@ -1,5 +1,6 @@
 import { scanStateDb } from '@/modules/database/index.js';
 import { providerRegistry } from '@/modules/providers/provider.registry.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 import type { LLMProvider } from '@/shared/types.js';
 
 type SessionSynchronizeResult = {
@@ -28,7 +29,7 @@ export const sessionSynchronizerService = {
 
     const results = await Promise.allSettled(
       providerRegistry.listProviders().map(async (provider) => ({
-        provider: provider.id,
+        provider: baseProviderOf(provider.id),
         processed: await provider.sessionSynchronizer.synchronize(lastScanAt ?? undefined),
       }))
     );

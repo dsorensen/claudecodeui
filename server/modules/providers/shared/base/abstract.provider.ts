@@ -17,7 +17,8 @@ import type { LLMProvider } from '@/shared/types.js';
  * SDK/CLI formats.
  */
 export abstract class AbstractProvider implements IProvider {
-  readonly id: LLMProvider;
+  readonly id: string;
+  readonly baseProvider: LLMProvider;
   abstract readonly models: IProviderModels;
   abstract readonly mcp: IProviderMcp;
   abstract readonly auth: IProviderAuth;
@@ -25,7 +26,8 @@ export abstract class AbstractProvider implements IProvider {
   abstract readonly sessions: IProviderSessions;
   abstract readonly sessionSynchronizer: IProviderSessionSynchronizer;
 
-  protected constructor(id: LLMProvider) {
+  protected constructor(baseProvider: LLMProvider, id: string = baseProvider) {
+    this.baseProvider = baseProvider;
     this.id = id;
   }
 }
