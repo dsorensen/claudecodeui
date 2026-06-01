@@ -15,13 +15,17 @@ import type {
 
 export class ClaudeProvider extends AbstractProvider {
   readonly models: IProviderModels = new ClaudeProviderModels();
-  readonly mcp = new ClaudeMcpProvider();
-  readonly auth: IProviderAuth = new ClaudeProviderAuth();
-  readonly skills: IProviderSkills = new ClaudeSkillsProvider();
+  readonly mcp: ClaudeMcpProvider;
+  readonly auth: IProviderAuth;
+  readonly skills: IProviderSkills;
   readonly sessions: IProviderSessions = new ClaudeSessionsProvider();
-  readonly sessionSynchronizer: IProviderSessionSynchronizer = new ClaudeSessionSynchronizer();
+  readonly sessionSynchronizer: IProviderSessionSynchronizer;
 
-  constructor() {
-    super('claude');
+  constructor(id: string = 'claude', configDir?: string) {
+    super('claude', id);
+    this.mcp = new ClaudeMcpProvider(configDir);
+    this.auth = new ClaudeProviderAuth(configDir);
+    this.skills = new ClaudeSkillsProvider(configDir);
+    this.sessionSynchronizer = new ClaudeSessionSynchronizer(id, configDir);
   }
 }
