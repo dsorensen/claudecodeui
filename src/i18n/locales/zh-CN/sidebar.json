@@ -44,6 +44,12 @@
     "groupedTooltip": "Group sessions by project",
     "flatTooltip": "Show all sessions by recency"
   },
+  "newSession": {
+    "tooltip": "新建会话",
+    "pickProject": "选择项目",
+    "searchPlaceholder": "搜索项目...",
+    "noMatches": "未找到匹配的项目"
+  },
   "tooltips": {
     "viewEnvironments": "查看环境",
     "hideSidebar": "隐藏侧边栏",

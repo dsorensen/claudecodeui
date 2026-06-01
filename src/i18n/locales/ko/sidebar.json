@@ -44,6 +44,12 @@
     "groupedTooltip": "Group sessions by project",
     "flatTooltip": "Show all sessions by recency"
   },
+  "newSession": {
+    "tooltip": "새 세션",
+    "pickProject": "프로젝트 선택",
+    "searchPlaceholder": "프로젝트 검색...",
+    "noMatches": "일치하는 프로젝트가 없습니다"
+  },
   "tooltips": {
     "viewEnvironments": "환경 보기",
     "hideSidebar": "사이드바 숨기기",

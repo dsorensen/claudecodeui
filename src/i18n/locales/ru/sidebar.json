@@ -44,6 +44,12 @@
     "groupedTooltip": "Group sessions by project",
     "flatTooltip": "Show all sessions by recency"
   },
+  "newSession": {
+    "tooltip": "Новый сеанс",
+    "pickProject": "Выберите проект",
+    "searchPlaceholder": "Поиск проектов...",
+    "noMatches": "Проекты не найдены"
+  },
   "tooltips": {
     "viewEnvironments": "Просмотр окружений",
     "hideSidebar": "Скрыть боковую панель",

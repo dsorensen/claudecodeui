@@ -44,6 +44,12 @@
     "groupedTooltip": "Group sessions by project",
     "flatTooltip": "Show all sessions by recency"
   },
+  "newSession": {
+    "tooltip": "Neue Sitzung",
+    "pickProject": "Projekt wählen",
+    "searchPlaceholder": "Projekte suchen...",
+    "noMatches": "Keine passenden Projekte"
+  },
   "tooltips": {
     "viewEnvironments": "Umgebungen anzeigen",
     "hideSidebar": "Seitenleiste ausblenden",

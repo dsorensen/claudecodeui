@@ -138,6 +138,8 @@ type SidebarContentProps = {
   isRefreshing: boolean;
   onCreateProject: () => void;
   onCollapseSidebar: () => void;
+  onNewSession: (project: Project) => void;
+  onProjectSelect: (project: Project) => void;
   updateAvailable: boolean;
   releaseInfo: ReleaseInfo | null;
   latestVersion: string | null;
@@ -177,6 +179,8 @@ export default function SidebarContent({
   isRefreshing,
   onCreateProject,
   onCollapseSidebar,
+  onNewSession,
+  onProjectSelect,
   updateAvailable,
   releaseInfo,
   latestVersion,
@@ -216,6 +220,9 @@ export default function SidebarContent({
         onCollapseSidebar={onCollapseSidebar}
         flatSessionView={flatSessionView}
         onFlatSessionViewChange={onFlatSessionViewChange}
+        projects={projects}
+        onNewSession={onNewSession}
+        onProjectSelect={onProjectSelect}
         t={t}
       />
 
