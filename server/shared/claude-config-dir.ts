@@ -28,3 +28,14 @@ export function getClaudeJsonPath(): string {
     ? path.join(override, '.claude.json')
     : path.join(os.homedir(), '.claude.json');
 }
+
+/**
+ * Resolves the .claude.json path for a specific config dir. The default
+ * ~/.claude profile keeps it at the legacy home-root ~/.claude.json; any other
+ * dir holds .claude.json inside itself.
+ */
+export function getClaudeJsonPathForDir(configDir: string): string {
+  return configDir === path.join(os.homedir(), '.claude')
+    ? path.join(os.homedir(), '.claude.json')
+    : path.join(configDir, '.claude.json');
+}
