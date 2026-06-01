@@ -20,6 +20,7 @@ import { CLAUDE_FALLBACK_MODELS } from './modules/providers/list/claude/claude-m
 import { providerModelsService } from './modules/providers/services/provider-models.service.js';
 import { resolveClaudeCodeExecutablePath } from './shared/claude-cli-path.js';
 import { getClaudeJsonPath } from './shared/claude-config-dir.js';
+import { getClaudeProfileConfigDir } from './modules/providers/list/claude/claude-profiles.js';
 import {
   createNotificationEvent,
   notifyRunFailed,
@@ -147,13 +148,23 @@ function matchesToolPermission(entry, toolName, input) {
  * @returns {Object} SDK-compatible options
  */
 function mapCliOptionsToSDK(options = {}) {
-  const { sessionId, cwd, toolsSettings, permissionMode } = options;
+  const { sessionId, cwd, toolsSettings, permissionMode, provider } = options;
 
   const sdkOptions = {};
 
   // Forward all host env vars (e.g. ANTHROPIC_BASE_URL) to the subprocess.
   // Since SDK 0.2.113, options.env replaces process.env instead of overlaying it.
   sdkOptions.env = { ...process.env };
+
+  // Point the spawned CLI at the selected Claude profile's config dir. For an
+  // unrecognized provider id getClaudeProfileConfigDir returns undefined, so we
+  // leave the inherited CLAUDE_CONFIG_DIR (or the CLI default) untouched. For the
+  // default 'claude' profile its configDir equals the inherited dir, so this is a
+  // no-op.
+  const profileConfigDir = provider ? getClaudeProfileConfigDir(provider) : undefined;
+  if (profileConfigDir) {
+    sdkOptions.env.CLAUDE_CONFIG_DIR = profileConfigDir;
+  }
 
   // Resolve the executable eagerly on Windows because the SDK uses raw child_process.spawn,
   // which does not reliably follow npm's shell wrappers like cross-spawn does.
@@ -503,6 +514,7 @@ async function loadMcpConfig(cwd) {
  */
 async function queryClaudeSDK(command, options = {}, ws) {
   const { sessionId, sessionSummary } = options;
+  const providerId = options.provider || 'claude';
   let capturedSessionId = sessionId;
   let sessionCreatedSent = false;
   let tempImagePaths = [];
@@ -547,7 +559,7 @@ async function queryClaudeSDK(command, options = {}, ws) {
         hooks: [async (input) => {
           const message = typeof input?.message === 'string' ? input.message : 'Claude requires your attention.';
           emitNotification(createNotificationEvent({
-            provider: 'claude',
+            provider: providerId,
             sessionId: capturedSessionId || sessionId || null,
             kind: 'action_required',
             code: 'agent.notification',
@@ -591,9 +603,9 @@ async function queryClaudeSDK(command, options = {}, ws) {
       }
 
       const requestId = createRequestId();
-      ws.send(createNormalizedMessage({ kind: 'permission_request', requestId, toolName, input, sessionId: capturedSessionId || sessionId || null, provider: 'claude' }));
+      ws.send(createNormalizedMessage({ kind: 'permission_request', requestId, toolName, input, sessionId: capturedSessionId || sessionId || null, provider: providerId }));
       emitNotification(createNotificationEvent({
-        provider: 'claude',
+        provider: providerId,
         sessionId: capturedSessionId || sessionId || null,
         kind: 'action_required',
         code: 'permission.required',
@@ -613,7 +625,7 @@ async function queryClaudeSDK(command, options = {}, ws) {
           _receivedAt: new Date(),
         },
         onCancel: (reason) => {
-          ws.send(createNormalizedMessage({ kind: 'permission_cancelled', requestId, reason, sessionId: capturedSessionId || sessionId || null, provider: 'claude' }));
+          ws.send(createNormalizedMessage({ kind: 'permission_cancelled', requestId, reason, sessionId: capturedSessionId || sessionId || null, provider: providerId }));
         }
       });
       if (!decision) {
@@ -689,7 +701,7 @@ async function queryClaudeSDK(command, options = {}, ws) {
         // Send session-created event only once for new sessions
         if (!sessionId && !sessionCreatedSent) {
           sessionCreatedSent = true;
-          ws.send(createNormalizedMessage({ kind: 'session_created', newSessionId: capturedSessionId, sessionId: capturedSessionId, provider: 'claude' }));
+          ws.send(createNormalizedMessage({ kind: 'session_created', newSessionId: capturedSessionId, sessionId: capturedSessionId, provider: providerId }));
         }
       } else {
         // session_id already captured
@@ -712,7 +724,7 @@ async function queryClaudeSDK(command, options = {}, ws) {
       // Extract and send token budget updates from assistant/result usage payloads
       const tokenBudgetData = extractTokenBudget(message);
       if (tokenBudgetData) {
-        ws.send(createNormalizedMessage({ kind: 'status', text: 'token_budget', tokenBudget: tokenBudgetData, sessionId: capturedSessionId || sessionId || null, provider: 'claude' }));
+        ws.send(createNormalizedMessage({ kind: 'status', text: 'token_budget', tokenBudget: tokenBudgetData, sessionId: capturedSessionId || sessionId || null, provider: providerId }));
       }
     }
 
@@ -725,10 +737,10 @@ async function queryClaudeSDK(command, options = {}, ws) {
     await cleanupTempFiles(tempImagePaths, tempDir);
 
     // Send completion event
-    ws.send(createNormalizedMessage({ kind: 'complete', exitCode: 0, isNewSession: !sessionId && !!command, sessionId: capturedSessionId, provider: 'claude' }));
+    ws.send(createNormalizedMessage({ kind: 'complete', exitCode: 0, isNewSession: !sessionId && !!command, sessionId: capturedSessionId, provider: providerId }));
     notifyRunStopped({
       userId: ws?.userId || null,
-      provider: 'claude',
+      provider: providerId,
       sessionId: capturedSessionId || sessionId || null,
       sessionName: sessionSummary,
       stopReason: 'completed'
@@ -753,10 +765,10 @@ async function queryClaudeSDK(command, options = {}, ws) {
       : error.message;
 
     // Send error to WebSocket
-    ws.send(createNormalizedMessage({ kind: 'error', content: errorContent, sessionId: capturedSessionId || sessionId || null, provider: 'claude' }));
+    ws.send(createNormalizedMessage({ kind: 'error', content: errorContent, sessionId: capturedSessionId || sessionId || null, provider: providerId }));
     notifyRunFailed({
       userId: ws?.userId || null,
-      provider: 'claude',
+      provider: providerId,
       sessionId: capturedSessionId || sessionId || null,
       sessionName: sessionSummary,
       error
