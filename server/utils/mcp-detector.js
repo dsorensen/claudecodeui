@@ -8,7 +8,8 @@
 
 import { promises as fsPromises } from 'fs';
 import path from 'path';
-import os from 'os';
+
+import { getClaudeConfigDir, getClaudeJsonPath } from '../shared/claude-config-dir.js';
 
 /**
  * Check if task-master-ai MCP server is configured
@@ -18,10 +19,9 @@ import os from 'os';
 export async function detectTaskMasterMCPServer() {
     try {
         // Read Claude configuration files directly (same logic as mcp.js)
-        const homeDir = os.homedir();
         const configPaths = [
-            path.join(homeDir, '.claude.json'),
-            path.join(homeDir, '.claude', 'settings.json')
+            getClaudeJsonPath(),
+            path.join(getClaudeConfigDir(), 'settings.json')
         ];
         
         let configData = null;

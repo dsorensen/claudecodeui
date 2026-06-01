@@ -9,8 +9,17 @@ import { providerSkillsService } from '@/modules/providers/services/skills.servi
 const patchHomeDir = (nextHomeDir: string) => {
   const original = os.homedir;
   (os as any).homedir = () => nextHomeDir;
+  // Claude config-dir resolution honors CLAUDE_CONFIG_DIR; clear it so these
+  // tests always resolve against the temp homedir and never touch a real profile.
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  delete process.env.CLAUDE_CONFIG_DIR;
   return () => {
     (os as any).homedir = original;
+    if (originalConfigDir === undefined) {
+      delete process.env.CLAUDE_CONFIG_DIR;
+    } else {
+      process.env.CLAUDE_CONFIG_DIR = originalConfigDir;
+    }
   };
 };
 

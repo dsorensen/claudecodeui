@@ -1,8 +1,8 @@
-import os from 'node:os';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 
 import { sessionsDb } from '@/modules/database/index.js';
+import { getClaudeConfigDir } from '@/shared/claude-config-dir.js';
 import {
   buildLookupMap,
   extractFirstValidJsonlData,
@@ -23,7 +23,7 @@ type ParsedSession = {
  */
 export class ClaudeSessionSynchronizer implements IProviderSessionSynchronizer {
   private readonly provider = 'claude' as const;
-  private readonly claudeHome = path.join(os.homedir(), '.claude');
+  private readonly claudeHome = getClaudeConfigDir();
 
   /**
    * Scans ~/.claude/projects and upserts discovered sessions into DB.

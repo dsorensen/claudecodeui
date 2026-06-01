@@ -12,6 +12,7 @@ import { spawnGemini } from '../gemini-cli.js';
 import { spawnOpenCode } from '../opencode-cli.js';
 import { Octokit } from '@octokit/rest';
 import { providerModelsService } from '../modules/providers/services/provider-models.service.js';
+import { getClaudeConfigDir } from '../shared/claude-config-dir.js';
 import { IS_PLATFORM } from '../constants/config.js';
 import { normalizeProjectPath } from '../shared/utils.js';
 
@@ -434,7 +435,7 @@ async function cleanupProject(projectPath, sessionId = null) {
     // Also clean up the Claude session directory if sessionId provided
     if (sessionId) {
       try {
-        const sessionPath = path.join(os.homedir(), '.claude', 'sessions', sessionId);
+        const sessionPath = path.join(getClaudeConfigDir(), 'sessions', sessionId);
         console.log('🧹 Cleaning up session directory:', sessionPath);
         await fs.rm(sessionPath, { recursive: true, force: true });
         console.log('✅ Session directory cleaned up');
