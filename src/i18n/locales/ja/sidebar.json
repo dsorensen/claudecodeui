@@ -35,10 +35,10 @@
     "showMore": "さらにセッションを表示"
   },
   "newSession": {
-    "tooltip": "New session",
-    "pickProject": "Pick a project",
-    "searchPlaceholder": "Search projects...",
-    "noMatches": "No matching projects"
+    "tooltip": "新しいセッション",
+    "pickProject": "プロジェクトを選択",
+    "searchPlaceholder": "プロジェクトを検索...",
+    "noMatches": "一致するプロジェクトがありません"
   },
   "tooltips": {
     "viewEnvironments": "環境を表示",

@@ -148,7 +148,7 @@ export default function SidebarHeader({
             >
               <PanelLeftClose className="h-3.5 w-3.5" />
             </Button>
-            {newSessionOpen && !isMobile && (
+            {newSessionOpen && !isMobile && projects.length > 0 && (
               <SidebarNewSessionPopover
                 projects={projects}
                 onSelectProject={handleNewSessionFromPopover}
@@ -290,7 +290,7 @@ export default function SidebarHeader({
             >
               <FolderPlus className="h-4 w-4" />
             </button>
-            {newSessionOpen && isMobile && (
+            {newSessionOpen && isMobile && projects.length > 0 && (
               <SidebarNewSessionPopover
                 projects={projects}
                 onSelectProject={handleNewSessionFromPopover}

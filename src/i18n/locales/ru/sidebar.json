@@ -35,10 +35,10 @@
     "showMore": "Показать больше сеансов"
   },
   "newSession": {
-    "tooltip": "New session",
-    "pickProject": "Pick a project",
-    "searchPlaceholder": "Search projects...",
-    "noMatches": "No matching projects"
+    "tooltip": "Новый сеанс",
+    "pickProject": "Выберите проект",
+    "searchPlaceholder": "Поиск проектов...",
+    "noMatches": "Проекты не найдены"
   },
   "tooltips": {
     "viewEnvironments": "Просмотр окружений",

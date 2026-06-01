@@ -35,10 +35,10 @@
     "showMore": "显示更多会话"
   },
   "newSession": {
-    "tooltip": "New session",
-    "pickProject": "Pick a project",
-    "searchPlaceholder": "Search projects...",
-    "noMatches": "No matching projects"
+    "tooltip": "新建会话",
+    "pickProject": "选择项目",
+    "searchPlaceholder": "搜索项目...",
+    "noMatches": "未找到匹配的项目"
   },
   "tooltips": {
     "viewEnvironments": "查看环境",
