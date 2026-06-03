@@ -2,6 +2,7 @@ import type { WebSocket } from 'ws';
 
 import { connectedClients } from '@/modules/websocket/services/websocket-state.service.js';
 import { WebSocketWriter } from '@/modules/websocket/services/websocket-writer.service.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 import type {
   AnyRecord,
   AuthenticatedWebSocketRequest,
@@ -60,12 +61,17 @@ type ChatWebSocketDependencies = {
 
 /**
  * Normalizes potentially invalid provider names coming from websocket payloads.
+ * Accepts base ids ('claude', 'cursor', …) and instance-qualified ids ('claude:work').
  */
-function readProvider(value: unknown): LLMProvider {
-  if (value === 'claude' || value === 'cursor' || value === 'codex' || value === 'gemini' || value === 'opencode') {
-    return value;
+function readProvider(value: unknown): string {
+  if (typeof value === 'string') {
+    try {
+      baseProviderOf(value); // throws on unknown base; accepts e.g. 'claude:13layers'
+      return value;
+    } catch {
+      return DEFAULT_PROVIDER;
+    }
   }
-
   return DEFAULT_PROVIDER;
 }
 
@@ -119,7 +125,12 @@ export function handleChatConnection(
       }
 
       if (messageType === 'claude-command') {
-        await dependencies.queryClaudeSDK(data.command ?? '', data.options, writer);
+        const provider = readProvider(data.provider);
+        await dependencies.queryClaudeSDK(
+          data.command ?? '',
+          { ...(data.options ?? {}), provider },
+          writer,
+        );
         return;
       }
 
@@ -170,6 +181,7 @@ export function handleChatConnection(
         } else if (provider === 'opencode') {
           success = dependencies.abortOpenCodeSession(sessionId);
         } else {
+          // Default branch handles all claude-family ids (e.g. 'claude', 'claude:work').
           success = await dependencies.abortClaudeSDKSession(sessionId);
         }
 
@@ -180,7 +192,9 @@ export function handleChatConnection(
             aborted: true,
             success,
             sessionId,
-            provider,
+            // Narrow the (possibly instance-qualified) id back to a base LLMProvider
+            // for the message schema; Plan 3 will surface instance ids on the wire.
+            provider: baseProviderOf(provider),
           })
         );
         return;
