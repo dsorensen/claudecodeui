@@ -1,10 +1,8 @@
 import { scanStateDb } from '@/modules/database/index.js';
 import { providerRegistry } from '@/modules/providers/provider.registry.js';
-import { baseProviderOf } from '@/shared/provider-id.js';
-import type { LLMProvider } from '@/shared/types.js';
 
 type SessionSynchronizeResult = {
-  processedByProvider: Record<LLMProvider, number>;
+  processedByProvider: Record<string, number>;
   failures: string[];
 };
 
@@ -18,18 +16,12 @@ export const sessionSynchronizerService = {
   async synchronizeSessions(): Promise<SessionSynchronizeResult> {
     const lastScanAt = scanStateDb.getLastScannedAt();
     const scanBoundary = new Date();
-    const processedByProvider: Record<LLMProvider, number> = {
-      claude: 0,
-      codex: 0,
-      cursor: 0,
-      gemini: 0,
-      opencode: 0,
-    };
+    const processedByProvider: Record<string, number> = {};
     const failures: string[] = [];
 
     const results = await Promise.allSettled(
       providerRegistry.listProviders().map(async (provider) => ({
-        provider: baseProviderOf(provider.id),
+        provider: provider.id, // instance id, no longer collapsed to base
         processed: await provider.sessionSynchronizer.synchronize(lastScanAt ?? undefined),
       }))
     );
@@ -62,9 +54,9 @@ export const sessionSynchronizerService = {
    * Indexes one provider artifact file without running a full provider rescan.
    */
   async synchronizeProviderFile(
-    provider: LLMProvider,
+    provider: string,
     filePath: string
-  ): Promise<{ provider: LLMProvider; indexed: boolean; sessionId: string | null }> {
+  ): Promise<{ provider: string; indexed: boolean; sessionId: string | null }> {
     const resolvedProvider = providerRegistry.resolveProvider(provider);
     const sessionId = await resolvedProvider.sessionSynchronizer.synchronizeFile(filePath);
     return {

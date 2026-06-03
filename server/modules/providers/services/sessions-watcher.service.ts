@@ -4,41 +4,24 @@ import { promises as fsPromises } from 'node:fs';
 
 import chokidar, { type FSWatcher } from 'chokidar';
 
+import { loadClaudeProfiles } from '@/modules/providers/list/claude/claude-profiles.js';
 import { sessionSynchronizerService } from '@/modules/providers/services/session-synchronizer.service.js';
-import { getClaudeConfigDir } from '@/shared/claude-config-dir.js';
 import { WS_OPEN_STATE, connectedClients } from '@/modules/websocket/index.js';
-import type { LLMProvider } from '@/shared/types.js';
 import { getProjectsWithSessions } from '@/modules/projects/index.js';
 
 type WatcherEventType = 'add' | 'change';
 
-const PROVIDER_WATCH_PATHS: Array<{ provider: LLMProvider; rootPath: string }> = [
-  {
-    provider: 'claude',
-    rootPath: path.join(getClaudeConfigDir(), 'projects'),
-  },
-  {
-    provider: 'cursor',
-    rootPath: path.join(os.homedir(), '.cursor', 'projects'),
-  },
-  {
-    provider: 'codex',
-    rootPath: path.join(os.homedir(), '.codex', 'sessions'),
-  },
-  // {
-  //   provider: 'gemini',
-  //   rootPath: path.join(os.homedir(), '.gemini', 'sessions'),
-  // },
-  // Keep `sessions/` watcher disabled: Gemini also mirrors artifacts there,
-  // which causes duplicate synchronization events.
-  {
-    provider: 'gemini',
-    rootPath: path.join(os.homedir(), '.gemini', 'tmp'),
-  },
-  {
-    provider: 'opencode',
-    rootPath: path.join(os.homedir(), '.local', 'share', 'opencode'),
-  },
+const buildProviderWatchPaths = (): Array<{ provider: string; rootPath: string }> => [
+  ...loadClaudeProfiles().map((profile) => ({
+    provider: profile.id,
+    rootPath: path.join(profile.configDir, 'projects'),
+  })),
+  { provider: 'cursor', rootPath: path.join(os.homedir(), '.cursor', 'projects') },
+  { provider: 'codex', rootPath: path.join(os.homedir(), '.codex', 'sessions') },
+  // Keep the gemini `sessions/` watcher disabled: Gemini also mirrors artifacts
+  // there, which causes duplicate synchronization events. Watch `tmp/` instead.
+  { provider: 'gemini', rootPath: path.join(os.homedir(), '.gemini', 'tmp') },
+  { provider: 'opencode', rootPath: path.join(os.homedir(), '.local', 'share', 'opencode') },
 ];
 
 const WATCHER_IGNORED_PATTERNS = [
@@ -57,7 +40,7 @@ const PROJECTS_UPDATE_MAX_WAIT_MS = 2_000;
 const watchers: FSWatcher[] = [];
 
 type PendingWatcherUpdate = {
-  providers: Set<LLMProvider>;
+  providers: Set<string>;
   changeTypes: Set<WatcherEventType>;
   updatedSessionIds: Set<string>;
 };
@@ -71,7 +54,7 @@ let watcherRescheduleAfterRefresh = false;
 /**
  * Filters watcher events to provider-specific session artifact file types.
  */
-function isWatcherTargetFile(provider: LLMProvider, filePath: string): boolean {
+function isWatcherTargetFile(provider: string, filePath: string): boolean {
   if (provider === 'opencode') {
     return path.basename(filePath) === 'opencode.db';
   }
@@ -112,12 +95,12 @@ function schedulePendingWatcherFlush(): void {
 
 function queuePendingWatcherUpdate(
   eventType: WatcherEventType,
-  provider: LLMProvider,
+  provider: string,
   updatedSessionId: string | null
 ): void {
   if (!pendingWatcherUpdate) {
     pendingWatcherUpdate = {
-      providers: new Set<LLMProvider>(),
+      providers: new Set<string>(),
       changeTypes: new Set<WatcherEventType>(),
       updatedSessionIds: new Set<string>(),
     };
@@ -193,7 +176,7 @@ async function flushPendingWatcherUpdate(): Promise<void> {
 async function onUpdate(
   eventType: WatcherEventType,
   filePath: string,
-  provider: LLMProvider
+  provider: string
 ): Promise<void> {
   if (!isWatcherTargetFile(provider, filePath)) {
     return;
@@ -232,7 +215,7 @@ export async function initializeSessionsWatcher(): Promise<void> {
     failures: initialSync.failures,
   });
 
-  for (const { provider, rootPath } of PROVIDER_WATCH_PATHS) {
+  for (const { provider, rootPath } of buildProviderWatchPaths()) {
     try {
       await fsPromises.mkdir(rootPath, { recursive: true });
 
