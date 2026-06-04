@@ -20,8 +20,9 @@ import type {
   PendingPermissionRequest,
   PermissionMode,
 } from '../types/types';
-import type { Project, ProjectSession, LLMProvider, ProviderModelsCacheInfo } from '../../../types/app';
+import type { Project, ProjectSession, LLMProvider, ProviderInstanceId, ProviderModelsCacheInfo } from '../../../types/app';
 import { escapeRegExp } from '../utils/chatFormatting';
+import { baseProviderOf } from '../../../lib/provider-id';
 
 import { useFileMentions } from './useFileMentions';
 import { type SlashCommand, useSlashCommands } from './useSlashCommands';
@@ -34,7 +35,7 @@ interface UseChatComposerStateArgs {
   selectedProject: Project | null;
   selectedSession: ProjectSession | null;
   currentSessionId: string | null;
-  provider: LLMProvider;
+  provider: ProviderInstanceId;
   permissionMode: PermissionMode | string;
   cyclePermissionMode: () => void;
   cursorModel: string;
@@ -417,7 +418,7 @@ export function useChatComposerState({
     handleCommandMenuKeyDown,
   } = useSlashCommands({
     selectedProject,
-    provider,
+    provider: baseProviderOf(provider),
     input,
     setInput,
     textareaRef,
@@ -728,6 +729,7 @@ export function useChatComposerState({
         sendMessage({
           type: 'claude-command',
           command: messageContent,
+          provider,
           options: {
             projectPath: resolvedProjectPath,
             cwd: resolvedProjectPath,

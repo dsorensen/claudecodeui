@@ -6,6 +6,7 @@ import PermissionContext from '../../../contexts/PermissionContext';
 import { QuickSettingsPanel } from '../../quick-settings-panel';
 import type { ChatInterfaceProps, Provider  } from '../types/types';
 import type { LLMProvider } from '../../../types/app';
+import { baseProviderOf } from '../../../lib/provider-id';
 import { useChatProviderState } from '../hooks/useChatProviderState';
 import { useChatSessionState } from '../hooks/useChatSessionState';
 import { useChatRealtimeHandlers } from '../hooks/useChatRealtimeHandlers';
@@ -229,7 +230,7 @@ function ChatInterface({
 
   useChatRealtimeHandlers({
     latestMessage,
-    provider,
+    provider: baseProviderOf(provider),
     selectedSession,
     currentSessionId,
     setCurrentSessionId,

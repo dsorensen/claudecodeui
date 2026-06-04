@@ -7,6 +7,7 @@ import type {
   Project,
   ProjectSession,
   LLMProvider,
+  ProviderInstanceId,
   ProviderModelsDefinition,
 } from '../../../../types/app';
 import { getIntrinsicMessageKey } from '../../utils/messageKeys';
@@ -22,8 +23,8 @@ interface ChatMessagesPaneProps {
   chatMessages: ChatMessage[];
   selectedSession: ProjectSession | null;
   currentSessionId: string | null;
-  provider: LLMProvider;
-  setProvider: (provider: LLMProvider) => void;
+  provider: ProviderInstanceId;
+  setProvider: (provider: ProviderInstanceId) => void;
   textareaRef: RefObject<HTMLTextAreaElement>;
   claudeModel: string;
   setClaudeModel: (model: string) => void;

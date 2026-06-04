@@ -4,11 +4,12 @@ import type { PendingPermissionRequest, PermissionMode } from '../types/types';
 import type {
   ProjectSession,
   LLMProvider,
+  ProviderInstanceId,
   Project,
   ProviderModelsCacheInfo,
   ProviderModelsDefinition,
 } from '../../../types/app';
-import { baseProviderOf } from '../../../lib/provider-id';
+import { baseProviderOf, claudeModelStorageKey, isClaudeFamily } from '../../../lib/provider-id';
 
 const FALLBACK_DEFAULT_MODEL: Record<LLMProvider, string> = {
   claude: 'opus',
@@ -58,14 +59,16 @@ type ChangeActiveModelApiResponse = {
 export function useChatProviderState({ selectedSession, selectedProject }: UseChatProviderStateArgs) {
   const [permissionMode, setPermissionMode] = useState<PermissionMode>('default');
   const [pendingPermissionRequests, setPendingPermissionRequests] = useState<PendingPermissionRequest[]>([]);
-  const [provider, setProvider] = useState<LLMProvider>(() => {
-    return (localStorage.getItem('selected-provider') as LLMProvider) || 'claude';
+  const [provider, setProvider] = useState<ProviderInstanceId>(() => {
+    return (localStorage.getItem('selected-provider') as ProviderInstanceId) || 'claude';
   });
   const [cursorModel, setCursorModel] = useState<string>(() => {
     return localStorage.getItem('cursor-model') || FALLBACK_DEFAULT_MODEL.cursor;
   });
   const [claudeModel, setClaudeModel] = useState<string>(() => {
-    return localStorage.getItem('claude-model') || FALLBACK_DEFAULT_MODEL.claude;
+    const initialProvider = localStorage.getItem('selected-provider') || 'claude';
+    const key = isClaudeFamily(initialProvider) ? claudeModelStorageKey(initialProvider) : 'claude-model';
+    return localStorage.getItem(key) || FALLBACK_DEFAULT_MODEL.claude;
   });
   const [codexModel, setCodexModel] = useState<string>(() => {
     return localStorage.getItem('codex-model') || FALLBACK_DEFAULT_MODEL.codex;
@@ -89,10 +92,10 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
   const lastProviderRef = useRef(provider);
   const providerModelsRequestIdRef = useRef(0);
 
-  const setStoredProviderModel = useCallback((targetProvider: LLMProvider, model: string) => {
-    if (targetProvider === 'claude') {
+  const setStoredProviderModel = useCallback((targetProvider: ProviderInstanceId, model: string) => {
+    if (isClaudeFamily(targetProvider)) {
       setClaudeModel(model);
-      localStorage.setItem('claude-model', model);
+      localStorage.setItem(claudeModelStorageKey(targetProvider), model);
       return;
     }
 
@@ -268,7 +271,7 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
     }
 
     const savedMode = localStorage.getItem(`permissionMode-${selectedSession.id}`) as PermissionMode | null;
-    const validModes = getPermissionModesForProvider(provider);
+    const validModes = getPermissionModesForProvider(baseProviderOf(provider));
     setPermissionMode(savedMode && validModes.includes(savedMode) ? savedMode : 'default');
   }, [selectedSession?.id, provider]);
 
@@ -277,8 +280,12 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
       return;
     }
 
-    setProvider(baseProviderOf(selectedSession.__provider));
-    localStorage.setItem('selected-provider', baseProviderOf(selectedSession.__provider));
+    const next = selectedSession.__provider;
+    setProvider(next);
+    localStorage.setItem('selected-provider', next);
+    if (isClaudeFamily(next)) {
+      setClaudeModel(localStorage.getItem(claudeModelStorageKey(next)) || FALLBACK_DEFAULT_MODEL.claude);
+    }
   }, [provider, selectedSession]);
 
   useEffect(() => {
@@ -318,7 +325,7 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
   }, [provider]);
 
   const cyclePermissionMode = useCallback(() => {
-    const modes = getPermissionModesForProvider(provider);
+    const modes = getPermissionModesForProvider(baseProviderOf(provider));
 
     const currentIndex = modes.indexOf(permissionMode);
     const nextIndex = (currentIndex + 1) % modes.length;

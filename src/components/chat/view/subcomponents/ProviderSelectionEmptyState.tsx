@@ -5,8 +5,11 @@ import { Trans, useTranslation } from "react-i18next";
 import type {
   ProjectSession,
   LLMProvider,
+  ProviderInstanceId,
   ProviderModelsDefinition,
 } from "../../../../types/app";
+import { baseProviderOf, claudeModelStorageKey, isClaudeFamily } from "../../../../lib/provider-id";
+import { useClaudeProfiles } from "../../../../hooks/useClaudeProfiles";
 import SessionProviderLogo from "../../../llm-logo-provider/SessionProviderLogo";
 import { NextTaskBanner } from "../../../task-master";
 import {
@@ -37,8 +40,8 @@ const MOD_KEY =
 type ProviderSelectionEmptyStateProps = {
   selectedSession: ProjectSession | null;
   currentSessionId: string | null;
-  provider: LLMProvider;
-  setProvider: (next: LLMProvider) => void;
+  provider: ProviderInstanceId;
+  setProvider: (next: ProviderInstanceId) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement>;
   claudeModel: string;
   setClaudeModel: (model: string) => void;
@@ -59,7 +62,7 @@ type ProviderSelectionEmptyStateProps = {
 };
 
 type ProviderGroup = {
-  id: LLMProvider;
+  id: ProviderInstanceId;
   name: string;
   models: { value: string; label: string; description?: string }[];
 };
@@ -73,22 +76,22 @@ function getModelConfig(
 }
 
 function getCurrentModel(
-  p: LLMProvider,
+  p: ProviderInstanceId,
   c: string,
   cu: string,
   co: string,
   g: string,
   o: string,
 ) {
-  if (p === "claude") return c;
+  if (isClaudeFamily(p)) return c;
   if (p === "codex") return co;
   if (p === "gemini") return g;
   if (p === "opencode") return o;
   return cu;
 }
 
-function getProviderDisplayName(p: LLMProvider) {
-  if (p === "claude") return "Claude";
+function getProviderDisplayName(p: ProviderInstanceId) {
+  if (isClaudeFamily(p)) return "Claude";
   if (p === "cursor") return "Cursor";
   if (p === "codex") return "Codex";
   if (p === "opencode") return "OpenCode";
@@ -119,15 +122,27 @@ export default function ProviderSelectionEmptyState({
   setInput,
 }: ProviderSelectionEmptyStateProps) {
   const { t } = useTranslation("chat");
+  const { profiles, isMultiProfile } = useClaudeProfiles();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const visibleProviderGroups = useMemo<ProviderGroup[]>(() => {
-    return PROVIDER_META.map((p) => ({
+    const claudeModels = providerModelCatalog.claude?.OPTIONS ?? [];
+    // Default (single profile): preserve the original "Anthropic" Claude group.
+    // Multi-profile: one Claude group per profile, headed by its label.
+    const claudeGroups: ProviderGroup[] = isMultiProfile
+      ? profiles
+          .filter((p) => isClaudeFamily(p.id))
+          .map((p) => ({ id: p.id as ProviderInstanceId, name: p.label, models: claudeModels }))
+      : [{ id: 'claude', name: 'Anthropic', models: claudeModels }];
+
+    const otherGroups: ProviderGroup[] = PROVIDER_META.filter((p) => p.id !== 'claude').map((p) => ({
       id: p.id,
       name: p.name,
       models: providerModelCatalog[p.id]?.OPTIONS ?? [],
     }));
-  }, [providerModelCatalog]);
+
+    return [...claudeGroups, ...otherGroups];
+  }, [providerModelCatalog, profiles, isMultiProfile]);
 
   const nextTaskPrompt = t("tasks.nextTaskPrompt", {
     defaultValue: "Start the next task",
@@ -143,7 +158,7 @@ export default function ProviderSelectionEmptyState({
   );
 
   const currentModelLabel = useMemo(() => {
-    const config = getModelConfig(provider, providerModelCatalog);
+    const config = getModelConfig(baseProviderOf(provider), providerModelCatalog);
     const found = config.OPTIONS.find(
       (o: { value: string; label: string }) => o.value === currentModel,
     );
@@ -151,10 +166,10 @@ export default function ProviderSelectionEmptyState({
   }, [provider, currentModel, providerModelCatalog]);
 
   const setModelForProvider = useCallback(
-    (providerId: LLMProvider, modelValue: string) => {
-      if (providerId === "claude") {
+    (providerId: ProviderInstanceId, modelValue: string) => {
+      if (isClaudeFamily(providerId)) {
         setClaudeModel(modelValue);
-        localStorage.setItem("claude-model", modelValue);
+        localStorage.setItem(claudeModelStorageKey(providerId), modelValue);
       } else if (providerId === "codex") {
         setCodexModel(modelValue);
         localStorage.setItem("codex-model", modelValue);
@@ -173,7 +188,7 @@ export default function ProviderSelectionEmptyState({
   );
 
   const handleModelSelect = useCallback(
-    (providerId: LLMProvider, modelValue: string) => {
+    (providerId: ProviderInstanceId, modelValue: string) => {
       setProvider(providerId);
       localStorage.setItem("selected-provider", providerId);
       setModelForProvider(providerId, modelValue);
@@ -315,7 +330,7 @@ export default function ProviderSelectionEmptyState({
                   model: opencodeModel,
                   defaultValue: "Ready with OpenCode {{model}}",
                 }),
-              }[provider]
+              }[baseProviderOf(provider)]
             }
           </p>
 
