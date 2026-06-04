@@ -1,11 +1,11 @@
-import type { LoadingProgress, Project, ProjectSession, LLMProvider } from '../../../types/app';
+import type { LoadingProgress, Project, ProjectSession, LLMProvider, ProviderInstanceId } from '../../../types/app';
 
 export type ProjectSortOrder = 'name' | 'date';
 export type SidebarSearchMode = 'projects' | 'conversations' | 'archived';
 export type ArchivedProjectListItem = Project & { isArchived: true };
 
 export type SessionWithProvider = ProjectSession & {
-  __provider: LLMProvider;
+  __provider: ProviderInstanceId;
 };
 
 export type ArchivedSessionListItem = {

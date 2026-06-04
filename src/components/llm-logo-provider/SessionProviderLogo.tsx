@@ -1,4 +1,5 @@
 import type { LLMProvider } from '../../types/app';
+import { baseProviderOf } from '../../lib/provider-id';
 import ClaudeLogo from './ClaudeLogo';
 import CodexLogo from './CodexLogo';
 import CursorLogo from './CursorLogo';
@@ -14,19 +15,21 @@ export default function SessionProviderLogo({
   provider = 'claude',
   className = 'w-5 h-5',
 }: SessionProviderLogoProps) {
-  if (provider === 'cursor') {
+  const base = baseProviderOf(provider ?? 'claude');
+
+  if (base === 'cursor') {
     return <CursorLogo className={className} />;
   }
 
-  if (provider === 'codex') {
+  if (base === 'codex') {
     return <CodexLogo className={className} />;
   }
 
-  if (provider === 'gemini') {
+  if (base === 'gemini') {
     return <GeminiLogo className={className} />;
   }
 
-  if (provider === 'opencode') {
+  if (base === 'opencode') {
     return <OpenCodeLogo className={className} />;
   }
 

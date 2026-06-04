@@ -1,5 +1,19 @@
 export type LLMProvider = 'claude' | 'cursor' | 'codex' | 'gemini' | 'opencode';
 
+/**
+ * A provider *instance* id. Base providers are bare names; Claude can have
+ * additional profiles addressed as `claude:<name>`. Resolve type-level concerns
+ * (icon, model catalog) via baseProviderOf() in src/lib/provider-id.ts.
+ */
+export type ProviderInstanceId = LLMProvider | `claude:${string}`;
+
+/** Frontend-facing Claude profile summary (mirror of the /profiles endpoint). */
+export type ClaudeProfileSummary = {
+  id: string;
+  label: string;
+  isDefault: boolean;
+};
+
 export type ProviderModelOption = {
   value: string;
   label: string;
@@ -29,7 +43,10 @@ export interface ProjectSession {
   updated_at?: string;
   lastActivity?: string;
   messageCount?: number;
-  __provider?: LLMProvider;
+  __provider?: ProviderInstanceId;
+  // Full provider instance id from the backend session row (e.g. "claude:work").
+  // Present on summaries returned by the project/session list APIs.
+  providerInstanceId?: string;
   // Tags the session with the owning project's DB `projectId` so UI handlers
   // (session switching, sidebar focus, etc.) can match against selectedProject.
   __projectId?: string;
