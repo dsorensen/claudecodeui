@@ -6,8 +6,9 @@ import { Badge, Button, Tooltip } from '../../../../shared/view/ui';
 import { cn } from '../../../../lib/utils';
 import type { Project, ProjectSession, LLMProvider } from '../../../../types/app';
 import type { SessionWithProvider } from '../../types/types';
-import { createSessionViewModel, formatCompactSessionAge } from '../../utils/utils';
+import { createSessionViewModel, formatCompactSessionAge, profileBadgeLabel, shouldShowProfileBadge } from '../../utils/utils';
 import { baseProviderOf } from '../../../../lib/provider-id';
+import { useClaudeProfiles } from '../../../../hooks/useClaudeProfiles';
 import SessionProviderLogo from '../../../llm-logo-provider/SessionProviderLogo';
 
 type SidebarSessionItemProps = {
@@ -53,6 +54,8 @@ export default function SidebarSessionItem({
   const isEditing = editingSession === session.id;
   const compactSessionAge = formatCompactSessionAge(sessionView.sessionTime, currentTime);
   const editingContainerRef = useRef<HTMLDivElement>(null);
+  const { byId: claudeProfilesById, isMultiProfile } = useClaudeProfiles();
+  const showProfileBadge = shouldShowProfileBadge(session.__provider, isMultiProfile);
 
   // The rename panel sits inside a group-hover opacity wrapper, so leaving the row
   // would visually hide it. While editing, dismiss only when the user clicks outside
@@ -129,6 +132,11 @@ export default function SidebarSessionItem({
                 {compactSessionAge && (
                   <span className="ml-auto flex-shrink-0 text-[11px] text-muted-foreground">{compactSessionAge}</span>
                 )}
+                {showProfileBadge && (
+                  <span className="flex-shrink-0 rounded bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary">
+                    {profileBadgeLabel(session.__provider, claudeProfilesById)}
+                  </span>
+                )}
               </div>
               <div className="mt-0.5 flex items-center">
                 {sessionView.messageCount > 0 && (
@@ -176,6 +184,11 @@ export default function SidebarSessionItem({
                     )}
                   >
                     {compactSessionAge}
+                  </span>
+                )}
+                {showProfileBadge && (
+                  <span className="flex-shrink-0 rounded bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary">
+                    {profileBadgeLabel(session.__provider, claudeProfilesById)}
                   </span>
                 )}
               </div>

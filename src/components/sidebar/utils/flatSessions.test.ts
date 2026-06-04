@@ -50,3 +50,23 @@ test('filterFlatSessions matches session title OR project display name; empty qu
     'matches parent project display name',
   );
 });
+
+import { profileBadgeLabel, shouldShowProfileBadge } from './utils';
+import type { ClaudeProfileSummary } from '../../../types/app';
+
+test('shouldShowProfileBadge: only non-default claude ids when multi-profile', () => {
+  assert.equal(shouldShowProfileBadge('claude:work', true), true);
+  assert.equal(shouldShowProfileBadge('claude:work', false), false, 'single profile: no badge');
+  assert.equal(shouldShowProfileBadge('claude', true), false, 'default profile: no badge');
+  assert.equal(shouldShowProfileBadge('cursor', true), false, 'non-claude: no badge');
+  assert.equal(shouldShowProfileBadge(undefined, true), false);
+});
+
+test('profileBadgeLabel: looks up the label, else empty', () => {
+  const byId: Record<string, ClaudeProfileSummary> = {
+    'claude:work': { id: 'claude:work', label: 'Work', isDefault: false },
+  };
+  assert.equal(profileBadgeLabel('claude:work', byId), 'Work');
+  assert.equal(profileBadgeLabel('claude:missing', byId), '');
+  assert.equal(profileBadgeLabel(undefined, byId), '');
+});

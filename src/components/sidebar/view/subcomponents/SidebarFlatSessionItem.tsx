@@ -6,8 +6,9 @@ import { Badge, Button, Tooltip } from '../../../../shared/view/ui';
 import { cn } from '../../../../lib/utils';
 import type { LLMProvider, Project, ProjectSession } from '../../../../types/app';
 import type { SessionWithProvider } from '../../types/types';
-import { createSessionViewModel, formatCompactSessionAge } from '../../utils/utils';
+import { createSessionViewModel, formatCompactSessionAge, profileBadgeLabel, shouldShowProfileBadge } from '../../utils/utils';
 import { baseProviderOf } from '../../../../lib/provider-id';
+import { useClaudeProfiles } from '../../../../hooks/useClaudeProfiles';
 import SessionProviderLogo from '../../../llm-logo-provider/SessionProviderLogo';
 
 type SidebarFlatSessionItemProps = {
@@ -51,6 +52,8 @@ export default function SidebarFlatSessionItem({
   const project = projectsById.get(projectId);
   const projectDisplay = project?.displayName || projectId;
   const editingContainerRef = useRef<HTMLDivElement>(null);
+  const { byId: claudeProfilesById, isMultiProfile } = useClaudeProfiles();
+  const showProfileBadge = shouldShowProfileBadge(session.__provider, isMultiProfile);
 
   useEffect(() => {
     if (!isEditing) {
@@ -124,6 +127,11 @@ export default function SidebarFlatSessionItem({
                 {compactSessionAge && (
                   <span className="ml-auto flex-shrink-0 text-[11px] text-muted-foreground">{compactSessionAge}</span>
                 )}
+                {showProfileBadge && (
+                  <span className="flex-shrink-0 rounded bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary">
+                    {profileBadgeLabel(session.__provider, claudeProfilesById)}
+                  </span>
+                )}
               </div>
               <div className="mt-0.5 flex items-center gap-2">
                 <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -175,6 +183,11 @@ export default function SidebarFlatSessionItem({
                     )}
                   >
                     {compactSessionAge}
+                  </span>
+                )}
+                {showProfileBadge && (
+                  <span className="flex-shrink-0 rounded bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary">
+                    {profileBadgeLabel(session.__provider, claudeProfilesById)}
                   </span>
                 )}
               </div>

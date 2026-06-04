@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 
-import type { Project, ProviderInstanceId } from '../../../types/app';
+import { isClaudeFamily } from '../../../lib/provider-id';
+import type { ClaudeProfileSummary, Project, ProviderInstanceId } from '../../../types/app';
 import type { ProjectSortOrder, SettingsProject, SessionViewModel, SessionWithProvider } from '../types/types';
 
 export const readProjectSortOrder = (): ProjectSortOrder => {
@@ -301,3 +302,15 @@ export const normalizeProjectForSettings = (project: Project): SettingsProject =
         : fallbackPath,
   };
 };
+
+/** A session row earns a profile badge only when it is a non-default Claude profile and >1 profile exists. */
+export const shouldShowProfileBadge = (
+  instanceId: ProviderInstanceId | string | undefined,
+  isMultiProfile: boolean,
+): boolean => Boolean(instanceId) && isMultiProfile && isClaudeFamily(instanceId as string) && instanceId !== 'claude';
+
+/** Human label for a profile instance id, or '' when not found. */
+export const profileBadgeLabel = (
+  instanceId: ProviderInstanceId | string | undefined,
+  byId: Record<string, ClaudeProfileSummary>,
+): string => (instanceId ? byId[instanceId]?.label ?? '' : '');
