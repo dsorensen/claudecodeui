@@ -203,15 +203,19 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
   useEffect(() => {
     const claude = providerModelCatalog.claude;
     if (claude) {
-      const next = pickStoredOrCurrent('claude-model', claudeModel, claude);
+      // Profile-aware: rehydrate/persist against the active Claude profile's key
+      // (claude-model for the default, claude-model:<id> for others) so loading
+      // the catalog never clobbers a per-profile model selection.
+      const key = isClaudeFamily(provider) ? claudeModelStorageKey(provider) : 'claude-model';
+      const next = pickStoredOrCurrent(key, claudeModel, claude);
       if (next !== claudeModel) {
         setClaudeModel(next);
       }
-      if (localStorage.getItem('claude-model') !== next) {
-        localStorage.setItem('claude-model', next);
+      if (localStorage.getItem(key) !== next) {
+        localStorage.setItem(key, next);
       }
     }
-  }, [providerModelCatalog.claude, claudeModel]);
+  }, [providerModelCatalog.claude, claudeModel, provider]);
 
   useEffect(() => {
     const cursor = providerModelCatalog.cursor;
