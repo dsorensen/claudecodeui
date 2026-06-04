@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-import type { Project } from '../../../types/app';
+import type { Project, ProviderInstanceId } from '../../../types/app';
 import type { ProjectSortOrder, SettingsProject, SessionViewModel, SessionWithProvider } from '../types/types';
 
 export const readProjectSortOrder = (): ProjectSortOrder => {
@@ -123,7 +123,7 @@ export const createSessionViewModel = (
 export const getAllSessions = (project: Project): SessionWithProvider[] => {
   const claudeSessions = [...(project.sessions || [])].map((session) => ({
     ...session,
-    __provider: 'claude' as const,
+    __provider: (session.providerInstanceId ?? 'claude') as ProviderInstanceId,
   }));
 
   const cursorSessions = (project.cursorSessions || []).map((session) => ({

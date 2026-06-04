@@ -10,6 +10,7 @@ import type {
   Project,
   ProjectSession,
   ProjectsUpdatedMessage,
+  ProviderInstanceId,
 } from '../types/app';
 
 type UseProjectsStateArgs = {
@@ -502,15 +503,16 @@ export function useProjectsState({
     for (const project of projects) {
       const claudeSession = project.sessions?.find((session) => session.id === sessionId);
       if (claudeSession) {
+        const claudeProvider = (claudeSession.providerInstanceId ?? 'claude') as ProviderInstanceId;
         const shouldUpdateProject = selectedProject?.projectId !== project.projectId;
         const shouldUpdateSession =
-          selectedSession?.id !== sessionId || selectedSession.__provider !== 'claude';
+          selectedSession?.id !== sessionId || selectedSession.__provider !== claudeProvider;
 
         if (shouldUpdateProject) {
           setSelectedProject(project);
         }
         if (shouldUpdateSession) {
-          setSelectedSession({ ...claudeSession, __provider: 'claude' });
+          setSelectedSession({ ...claudeSession, __provider: claudeProvider });
         }
         return;
       }
