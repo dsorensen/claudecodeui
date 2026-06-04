@@ -68,7 +68,7 @@ profiles API ─▶ picker (sets selected-provider = instance id)
 
 **F2. `useClaudeProfiles()` hook.** Fetches `GET /api/providers/claude/profiles` once (cached), returns `{ profiles, byId, isMultiProfile }`. On error, falls back to a single default `{ id:'claude', label:'Claude', isDefault:true }` so the picker still works.
 
-**F3. Picker.** In `ProviderSelectionEmptyState.tsx` (and the active-session model selector if a separate one exists), build the Claude `CommandGroup`s dynamically from `useClaudeProfiles()` — one group per profile, headed by its label; the other four providers are unchanged. Selecting a model sets `provider = profile.id` (instance id) + the model, and persists `selected-provider = profile.id`. Provider state (`useChatProviderState`) widens `provider` to `ProviderInstanceId`; on load the stored value is validated against available profiles, falling back to `'claude'`. **Model persistence:** default profile → `claude-model`; non-default → `claude-model:<id>`.
+**F3. Picker.** In `ProviderSelectionEmptyState.tsx` (and the active-session model selector if a separate one exists), build the Claude `CommandGroup`s dynamically from `useClaudeProfiles()` — one group per profile, headed by its label; the other four providers are unchanged. Selecting a model sets `provider = profile.id` (instance id) + the model, and persists `selected-provider = profile.id`. Provider state (`useChatProviderState`) widens `provider` to `ProviderInstanceId`; a stored id that no longer matches a configured profile degrades gracefully via the backend default config-dir fallback (no forced frontend reset). **Model persistence:** default profile → `claude-model`; non-default → `claude-model:<id>`.
 
 **F4. Resume correctness.** Replace the hardcoded `__provider: 'claude'` constants (`src/hooks/useProjectsState.ts` session-selection branches; `src/components/sidebar/utils/utils.ts:126`) with the session's real instance id (`session.providerInstanceId ?? 'claude'`), so selecting a `claude:work` session sets `provider = 'claude:work'` and the next message/resume forwards the correct id. Non-Claude provider constants are left as-is.
 
@@ -78,7 +78,7 @@ profiles API ─▶ picker (sets selected-provider = instance id)
 
 1. App load → `useClaudeProfiles()` fetches the profiles endpoint.
 2. Picker renders one Claude group per profile → user picks a model under "Claude · work" → `provider = 'claude:work'`, persisted; model persisted under `claude-model:claude:work`.
-3. Send → chat websocket `claude-command` with the instance id in `options.provider` → backend (Plan 2) resolves configDir, spawns, stores session as `claude:work`.
+3. Send → chat websocket `claude-command` carrying the instance id as a **top-level `provider`** field → backend (Plan 2) reads it (`chat-websocket.service.ts` via `readProvider`, which preserves `claude:work`), merges it into the spawn options, resolves configDir, spawns, stores session as `claude:work`.
 4. Sessions list → `bucketSessionRowsByProvider` keeps the `claude:work` row in the `claude` array with `providerInstanceId` set → frontend session gets `__provider = 'claude:work'`.
 5. Sidebar shows the session in the Claude list, badged "work" (because >1 profile).
 6. Click the session → `__provider = 'claude:work'` becomes the active provider → resume forwards `claude:work` → backend resumes under the right configDir.
@@ -86,7 +86,7 @@ profiles API ─▶ picker (sets selected-provider = instance id)
 ## Error handling
 
 - Profiles endpoint failure → single default `claude` profile (picker still works, no badges).
-- Stored `selected-provider` references a removed profile → fall back to `'claude'`.
+- Stored `selected-provider` references a removed profile → the backend resolves the unknown id to the default config dir (graceful); the frontend does not forcibly reset the selection (avoids a reset/sync effect loop).
 - Stored model not in the catalog → provider default model (existing behavior).
 - Missing profile label for a session's id → no badge (do not crash).
 - Unknown provider base in a DB row → still dropped (B2 guard), as today.
