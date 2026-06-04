@@ -54,3 +54,22 @@ export function loadClaudeProfiles(): ClaudeProfile[] {
 export function getClaudeProfileConfigDir(id: string): string | undefined {
   return loadClaudeProfiles().find((profile) => profile.id === id)?.configDir;
 }
+
+/** Frontend-safe view of a profile: never includes the filesystem `configDir`. */
+export type ClaudeProfileSummary = {
+  id: string;
+  label: string;
+  isDefault: boolean;
+};
+
+/**
+ * Maps the configured profiles to the frontend-facing summary shape. The default
+ * profile is the one with id "claude" (always present per loadClaudeProfiles).
+ */
+export function listClaudeProfileSummaries(): ClaudeProfileSummary[] {
+  return loadClaudeProfiles().map((profile) => ({
+    id: profile.id,
+    label: profile.label,
+    isDefault: profile.id === 'claude',
+  }));
+}

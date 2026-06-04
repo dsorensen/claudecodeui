@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from 'express';
 
+import { listClaudeProfileSummaries } from '@/modules/providers/list/claude/claude-profiles.js';
 import { providerAuthService } from '@/modules/providers/services/provider-auth.service.js';
 import { providerMcpService } from '@/modules/providers/services/mcp.service.js';
 import { providerModelsService } from '@/modules/providers/services/provider-models.service.js';
@@ -12,7 +13,7 @@ import type {
   ProviderChangeActiveModelInput,
   UpsertProviderMcpServerInput,
 } from '@/shared/types.js';
-import { baseProviderOf } from '@/shared/provider-id.js';
+import { baseProviderOf, isClaudeFamily } from '@/shared/provider-id.js';
 import { AppError, asyncHandler, createApiSuccessResponse } from '@/shared/utils.js';
 
 const router = express.Router();
@@ -286,6 +287,20 @@ router.get(
     const bypassCache = parseOptionalBooleanQuery(req.query.bypassCache, 'bypassCache') ?? false;
     const result = await providerModelsService.getProviderModels(baseProviderOf(provider), { bypassCache });
     res.json(createApiSuccessResponse({ provider, models: result.models, cache: result.cache }));
+  }),
+);
+
+router.get(
+  '/:provider/profiles',
+  asyncHandler(async (req: Request, res: Response) => {
+    const provider = parseProvider(req.params.provider);
+    if (!isClaudeFamily(provider)) {
+      throw new AppError(`Provider "${provider}" does not support profiles.`, {
+        code: 'UNSUPPORTED_PROVIDER_OPERATION',
+        statusCode: 400,
+      });
+    }
+    res.json(createApiSuccessResponse({ provider, profiles: listClaudeProfileSummaries() }));
   }),
 );
 
