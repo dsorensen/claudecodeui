@@ -1,5 +1,6 @@
 import { authenticatedFetch } from '../../../utils/api';
 import type { LLMProvider, ProjectSession } from '../../../types/app';
+import { baseProviderOf } from '../../../lib/provider-id';
 
 import { useApiSource } from './useApiSource';
 
@@ -39,7 +40,7 @@ export function useSessionsSource(projectId: string | undefined, enabled: boolea
       return all.map<SessionResult>((s) => ({
         id: s.id,
         label: (s.title || s.summary || s.name || s.id) as string,
-        provider: s.__provider,
+        provider: s.__provider ? baseProviderOf(s.__provider) : undefined,
       }));
     },
   });

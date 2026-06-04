@@ -12,6 +12,7 @@ import SidebarHeader from './SidebarHeader';
 import SidebarProjectList, { type SidebarProjectListProps } from './SidebarProjectList';
 import SidebarFlatSessionList, { type SidebarFlatSessionListProps } from './SidebarFlatSessionList';
 import { getAllSessions } from '../../utils/utils';
+import { baseProviderOf } from '../../../../lib/provider-id';
 
 function HighlightedSnippet({ snippet, highlights }: { snippet: string; highlights: { start: number; end: number }[] }) {
   const parts: ReactNode[] = [];
@@ -398,7 +399,7 @@ export default function SidebarContent({
                             className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-accent/40"
                             onClick={() => onArchivedSessionClick({
                               sessionId: String(session.id),
-                              provider: session.__provider,
+                              provider: baseProviderOf(session.__provider ?? 'claude'),
                               projectId: project.projectId,
                               projectPath: project.fullPath,
                               projectDisplayName: project.displayName,

@@ -7,6 +7,7 @@ import { cn } from '../../../../lib/utils';
 import type { Project, ProjectSession, LLMProvider } from '../../../../types/app';
 import type { SessionWithProvider } from '../../types/types';
 import { createSessionViewModel, formatCompactSessionAge } from '../../utils/utils';
+import { baseProviderOf } from '../../../../lib/provider-id';
 import SessionProviderLogo from '../../../llm-logo-provider/SessionProviderLogo';
 
 type SidebarSessionItemProps = {
@@ -80,11 +81,11 @@ export default function SidebarSessionItem({
   };
 
   const saveEditedSession = () => {
-    onSaveEditingSession(project.projectId, session.id, editingSessionName, session.__provider);
+    onSaveEditingSession(project.projectId, session.id, editingSessionName, baseProviderOf(session.__provider ?? 'claude'));
   };
 
   const requestDeleteSession = () => {
-    onDeleteSession(project.projectId, session.id, sessionView.sessionName, session.__provider);
+    onDeleteSession(project.projectId, session.id, sessionView.sessionName, baseProviderOf(session.__provider ?? 'claude'));
   };
 
   return (

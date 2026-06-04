@@ -8,6 +8,7 @@ import type {
   ProviderModelsCacheInfo,
   ProviderModelsDefinition,
 } from '../../../types/app';
+import { baseProviderOf } from '../../../lib/provider-id';
 
 const FALLBACK_DEFAULT_MODEL: Record<LLMProvider, string> = {
   claude: 'opus',
@@ -276,8 +277,8 @@ export function useChatProviderState({ selectedSession, selectedProject }: UseCh
       return;
     }
 
-    setProvider(selectedSession.__provider);
-    localStorage.setItem('selected-provider', selectedSession.__provider);
+    setProvider(baseProviderOf(selectedSession.__provider));
+    localStorage.setItem('selected-provider', baseProviderOf(selectedSession.__provider));
   }, [provider, selectedSession]);
 
   useEffect(() => {
