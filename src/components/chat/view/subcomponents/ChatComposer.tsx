@@ -13,6 +13,7 @@ import type {
 } from 'react';
 import { ImageIcon, MessageSquareIcon, XIcon, ArrowDownIcon } from 'lucide-react';
 import type { PendingPermissionRequest, PermissionMode, Provider } from '../../types/types';
+import { isClaudeFamily } from '../../../../lib/provider-id';
 import CommandMenu from './CommandMenu';
 import ClaudeStatus from './ClaudeStatus';
 import ImageAttachment from './ImageAttachment';
@@ -357,7 +358,7 @@ export default function ChatComposer({
               </div>
             </button>
 
-            {provider === 'claude' && (
+            {isClaudeFamily(provider) && (
               <ThinkingModeSelector selectedMode={thinkingMode} onModeChange={setThinkingMode} onClose={() => {}} className="" />
             )}
 

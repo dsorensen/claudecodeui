@@ -10,7 +10,7 @@ export type SessionWithProvider = ProjectSession & {
 
 export type ArchivedSessionListItem = {
   sessionId: string;
-  provider: LLMProvider;
+  provider: ProviderInstanceId;
   projectId: string | null;
   projectPath: string | null;
   projectDisplayName: string;

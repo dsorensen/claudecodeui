@@ -11,6 +11,7 @@ import { useTasksSettings } from '../../../contexts/TasksSettingsContext';
 import type { Project, LLMProvider } from '../../../types/app';
 import type { MCPServerStatus, SidebarProps } from '../types/types';
 import { filterFlatSessions, getAllSessionsAcrossProjects } from '../utils/utils';
+import { baseProviderOf } from '../../../lib/provider-id';
 
 import SidebarCollapsed from './subcomponents/SidebarCollapsed';
 import SidebarContent from './subcomponents/SidebarContent';
@@ -312,7 +313,7 @@ function Sidebar({
                 session.projectId,
                 session.sessionId,
                 session.sessionTitle,
-                session.provider,
+                baseProviderOf(session.provider),
                 { isArchived: true },
               );
             }}
