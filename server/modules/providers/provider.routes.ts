@@ -7,12 +7,12 @@ import { providerSkillsService } from '@/modules/providers/services/skills.servi
 import { sessionConversationsSearchService } from '@/modules/providers/services/session-conversations-search.service.js';
 import { sessionsService } from '@/modules/providers/services/sessions.service.js';
 import type {
-  LLMProvider,
   McpScope,
   McpTransport,
   ProviderChangeActiveModelInput,
   UpsertProviderMcpServerInput,
 } from '@/shared/types.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 import { AppError, asyncHandler, createApiSuccessResponse } from '@/shared/utils.js';
 
 const router = express.Router();
@@ -178,22 +178,17 @@ const parseMcpUpsertPayload = (payload: unknown): UpsertProviderMcpServerInput =
   };
 };
 
-const parseProvider = (value: unknown): LLMProvider => {
+const parseProvider = (value: unknown): string => {
   const normalized = normalizeProviderParam(value);
-  if (
-    normalized === 'claude'
-    || normalized === 'codex'
-    || normalized === 'cursor'
-    || normalized === 'gemini'
-    || normalized === 'opencode'
-  ) {
+  try {
+    baseProviderOf(normalized); // accepts 'claude', 'claude:13layers', 'gemini', ...; throws on unknown base
     return normalized;
+  } catch {
+    throw new AppError(`Unsupported provider "${normalized}".`, {
+      code: 'UNSUPPORTED_PROVIDER',
+      statusCode: 400,
+    });
   }
-
-  throw new AppError(`Unsupported provider "${normalized}".`, {
-    code: 'UNSUPPORTED_PROVIDER',
-    statusCode: 400,
-  });
 };
 
 const parseSessionRenameSummary = (payload: unknown): string => {
@@ -289,7 +284,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const provider = parseProvider(req.params.provider);
     const bypassCache = parseOptionalBooleanQuery(req.query.bypassCache, 'bypassCache') ?? false;
-    const result = await providerModelsService.getProviderModels(provider, { bypassCache });
+    const result = await providerModelsService.getProviderModels(baseProviderOf(provider), { bypassCache });
     res.json(createApiSuccessResponse({ provider, models: result.models, cache: result.cache }));
   }),
 );
@@ -300,7 +295,7 @@ router.post(
     const provider = parseProvider(req.params.provider);
     const sessionId = parseSessionId(req.params.sessionId);
     const payload = parseChangeActiveModelPayload(req.body);
-    const result = await providerModelsService.changeActiveModel(provider, {
+    const result = await providerModelsService.changeActiveModel(baseProviderOf(provider), {
       ...payload,
       sessionId,
     });

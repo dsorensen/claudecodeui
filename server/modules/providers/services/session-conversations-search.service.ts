@@ -6,9 +6,10 @@ import { spawn } from 'cross-spawn';
 import { rgPath } from '@vscode/ripgrep';
 
 import { projectsDb, sessionsDb } from '@/modules/database/index.js';
+import { isClaudeFamily } from '@/shared/provider-id.js';
 
 type AnyRecord = Record<string, any>;
-type SearchableProvider = 'claude' | 'codex' | 'gemini';
+type SearchableProvider = string;
 
 type SearchSnippetHighlight = {
   start: number;
@@ -475,8 +476,8 @@ function normalizeSearchableSessions(rows: SessionRepositoryRow[]): SearchableSe
   const projectArchiveStateByPath = new Map<string, boolean>();
 
   for (const row of rows) {
-    const provider = row.provider as SearchableProvider;
-    if (!SUPPORTED_PROVIDERS.has(provider)) {
+    const provider = row.provider;
+    if (!isClaudeFamily(provider) && !SUPPORTED_PROVIDERS.has(provider)) {
       continue;
     }
 
@@ -1144,7 +1145,7 @@ async function parseSessionMatches(
   session: SearchableSessionRow,
   runtime: SearchRuntime,
 ): Promise<SessionConversationResult | null> {
-  if (session.provider === 'claude') {
+  if (isClaudeFamily(session.provider)) {
     return parseClaudeSessionMatches(session, runtime);
   }
   if (session.provider === 'codex') {
@@ -1236,7 +1237,7 @@ export async function searchConversations(
   };
 
   for (const [fileKey, sessions] of sessionsByPathKey.entries()) {
-    const claudeSessions = sessions.filter((session) => session.provider === 'claude');
+    const claudeSessions = sessions.filter((session) => isClaudeFamily(session.provider));
     if (claudeSessions.length > 0) {
       runtime.claudeSessionsByFileKey.set(fileKey, claudeSessions);
     }

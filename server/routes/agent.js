@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { userDb, apiKeysDb, githubTokensDb, projectsDb } from '../modules/database/index.js';
 import { queryClaudeSDK } from '../claude-sdk.js';
 import { spawnCursor } from '../cursor-cli.js';
+import { isClaudeFamily } from '../shared/provider-id.js';
 import { queryCodex } from '../openai-codex.js';
 import { spawnGemini } from '../gemini-cli.js';
 import { spawnOpenCode } from '../opencode-cli.js';
@@ -861,7 +862,7 @@ router.post('/', validateExternalApiKey, async (req, res) => {
     return res.status(400).json({ error: 'message is required' });
   }
 
-  if (!['claude', 'cursor', 'codex', 'gemini', 'opencode'].includes(provider)) {
+  if (!isClaudeFamily(provider) && !['cursor', 'codex', 'gemini', 'opencode'].includes(provider)) {
     return res.status(400).json({ error: 'provider must be "claude", "cursor", "codex", "gemini", or "opencode"' });
   }
 
@@ -945,7 +946,7 @@ router.post('/', validateExternalApiKey, async (req, res) => {
     const opencodeModels = (await providerModelsService.getProviderModels('opencode')).models;
 
     // Start the appropriate session
-    if (provider === 'claude') {
+    if (isClaudeFamily(provider)) {
       console.log('🤖 Starting Claude SDK session');
 
       await queryClaudeSDK(message.trim(), {
@@ -953,7 +954,8 @@ router.post('/', validateExternalApiKey, async (req, res) => {
         cwd: finalProjectPath,
         sessionId: sessionId || null,
         model: model,
-        permissionMode: 'bypassPermissions' // Bypass all permissions for API calls
+        permissionMode: 'bypassPermissions', // Bypass all permissions for API calls
+        provider
       }, writer);
 
     } else if (provider === 'cursor') {

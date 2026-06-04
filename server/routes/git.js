@@ -5,6 +5,7 @@ import { promises as fs } from 'fs';
 import { projectsDb } from '../modules/database/index.js';
 import { queryClaudeSDK } from '../claude-sdk.js';
 import { spawnCursor } from '../cursor-cli.js';
+import { isClaudeFamily } from '../shared/provider-id.js';
 
 const router = express.Router();
 const COMMIT_DIFF_CHARACTER_LIMIT = 500_000;
@@ -852,7 +853,7 @@ router.post('/generate-commit-message', async (req, res) => {
   }
 
   // Validate provider
-  if (!['claude', 'cursor'].includes(provider)) {
+  if (!isClaudeFamily(provider) && provider !== 'cursor') {
     return res.status(400).json({ error: 'provider must be "claude" or "cursor"' });
   }
 
@@ -984,11 +985,12 @@ Generate the commit message:`;
     console.log('📝 Prompt length:', prompt.length);
 
     // Call the appropriate agent
-    if (provider === 'claude') {
+    if (isClaudeFamily(provider)) {
       await queryClaudeSDK(prompt, {
         cwd: projectPath,
         permissionMode: 'bypassPermissions',
-        model: 'sonnet'
+        model: 'sonnet',
+        provider
       }, writer);
     } else if (provider === 'cursor') {
       await spawnCursor(prompt, {
