@@ -6,12 +6,14 @@ import { sessionSynchronizerService } from '@/modules/providers/index.js';
 import { WS_OPEN_STATE, connectedClients } from '@/modules/websocket/index.js';
 import type { RealtimeClientConnection } from '@/shared/types.js';
 import { AppError } from '@/shared/utils.js';
+import { baseProviderOf } from '@/shared/provider-id.js';
 
 type SessionSummary = {
   id: string;
   summary: string;
   messageCount: number;
   lastActivity: string;
+  providerInstanceId: string;
 };
 
 type SessionsByProvider = Record<'claude' | 'cursor' | 'codex' | 'gemini' | 'opencode', SessionSummary[]>;
@@ -132,10 +134,11 @@ function mapSessionRowToSummary(row: SessionRepositoryRow): SessionSummary {
     summary: row.custom_name || '',
     messageCount: 0,
     lastActivity: row.updated_at ?? row.created_at ?? new Date().toISOString(),
+    providerInstanceId: row.provider,
   };
 }
 
-function bucketSessionRowsByProvider(rows: SessionRepositoryRow[]): SessionsByProvider {
+export function bucketSessionRowsByProvider(rows: SessionRepositoryRow[]): SessionsByProvider {
   const byProvider: SessionsByProvider = {
     claude: [],
     cursor: [],
@@ -145,8 +148,16 @@ function bucketSessionRowsByProvider(rows: SessionRepositoryRow[]): SessionsByPr
   };
 
   for (const row of rows) {
-    const provider = row.provider as keyof SessionsByProvider;
-    const bucket = byProvider[provider];
+    let base: string;
+    try {
+      // Collapse an instance id ("claude:work") to its base provider ("claude").
+      base = baseProviderOf(row.provider);
+    } catch {
+      // Unknown provider base — drop the row (preserves prior behavior for junk rows).
+      continue;
+    }
+
+    const bucket = byProvider[base as keyof SessionsByProvider];
     if (!bucket) {
       continue;
     }
