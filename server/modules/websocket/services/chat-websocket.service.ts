@@ -243,9 +243,11 @@ export function handleChatConnection(
           isActive = dependencies.isOpenCodeSessionActive(sessionId);
         } else {
           isActive = dependencies.isClaudeSDKSessionActive(sessionId);
-          if (isActive) {
-            dependencies.reconnectSessionWriter(sessionId, ws);
-          }
+          // Always reconnect the writer — including for a session that
+          // completed while the client was disconnected. The writer is kept
+          // for a grace period (markSessionCompleted) so its replay buffer can
+          // flush any missed terminal event and unblock the client's UI.
+          dependencies.reconnectSessionWriter(sessionId, ws);
         }
 
         writer.send({
