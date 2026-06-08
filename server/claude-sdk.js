@@ -264,6 +264,33 @@ function removeSession(sessionId) {
 }
 
 /**
+ * Marks a session as completed but keeps it in the active sessions map for a
+ * grace period, so a client that reconnects after the run finished can still
+ * locate the writer and replay buffered events (in particular the terminal
+ * `complete`/`error` event that unblocks its UI). After the TTL expires the
+ * entry is fully removed.
+ *
+ * Use this from the `queryClaudeSDK` success and error paths instead of
+ * calling `removeSession` directly. Explicit aborts should still call
+ * `removeSession` for immediate cleanup.
+ *
+ * @param {string} sessionId - Session identifier
+ */
+const COMPLETED_SESSION_TTL_MS = 5 * 60 * 1000;
+function markSessionCompleted(sessionId) {
+  const session = getSession(sessionId);
+  if (!session) return;
+  session.status = 'completed';
+  setTimeout(() => {
+    const current = getSession(sessionId);
+    // Only remove if no new run has restarted under the same session id.
+    if (current && current.status !== 'active') {
+      removeSession(sessionId);
+    }
+  }, COMPLETED_SESSION_TTL_MS).unref();
+}
+
+/**
  * Gets a session from the active sessions map
  * @param {string} sessionId - Session identifier
  * @returns {Object|undefined} Session data or undefined
@@ -728,9 +755,10 @@ async function queryClaudeSDK(command, options = {}, ws) {
       }
     }
 
-    // Clean up session on completion
+    // Mark session completed (kept in map for a grace period so a reconnecting
+    // client can still flush the writer's replay buffer for missed events).
     if (capturedSessionId) {
-      removeSession(capturedSessionId);
+      markSessionCompleted(capturedSessionId);
     }
 
     // Clean up temporary image files
@@ -750,9 +778,11 @@ async function queryClaudeSDK(command, options = {}, ws) {
   } catch (error) {
     console.error('SDK query error:', error);
 
-    // Clean up session on error
+    // Mark session completed (see note in success path). Keeping the writer
+    // around through the grace period lets a reconnecting client receive the
+    // `error` event below instead of staying stuck on "Processing".
     if (capturedSessionId) {
-      removeSession(capturedSessionId);
+      markSessionCompleted(capturedSessionId);
     }
 
     // Clean up temporary image files on error
@@ -874,5 +904,9 @@ export {
   getActiveClaudeSDKSessions,
   resolveToolApproval,
   getPendingApprovalsForSession,
-  reconnectSessionWriter
+  reconnectSessionWriter,
+  addSession,
+  getSession,
+  markSessionCompleted,
+  COMPLETED_SESSION_TTL_MS
 };
