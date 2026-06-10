@@ -42,7 +42,9 @@
     "grouped": "Grouped",
     "flat": "Recent",
     "groupedTooltip": "Group sessions by project",
-    "flatTooltip": "Show all sessions by recency"
+    "flatTooltip": "Show all sessions by recency",
+    "showFilters": "フィルターを表示",
+    "hideFilters": "フィルターを非表示"
   },
   "newSession": {
     "tooltip": "新しいセッション",

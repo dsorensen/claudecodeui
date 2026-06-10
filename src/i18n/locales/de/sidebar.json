@@ -42,7 +42,9 @@
     "grouped": "Grouped",
     "flat": "Recent",
     "groupedTooltip": "Group sessions by project",
-    "flatTooltip": "Show all sessions by recency"
+    "flatTooltip": "Show all sessions by recency",
+    "showFilters": "Filter anzeigen",
+    "hideFilters": "Filter ausblenden"
   },
   "newSession": {
     "tooltip": "Neue Sitzung",

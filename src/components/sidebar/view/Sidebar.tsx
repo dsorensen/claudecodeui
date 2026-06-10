@@ -50,7 +50,7 @@ function Sidebar({
     'claudecodeui',
   );
   const { preferences, setPreference } = useUiPreferences();
-  const { sidebarVisible, flatSessionView } = preferences;
+  const { sidebarVisible, flatSessionView, filtersExpanded } = preferences;
   const { setCurrentProject, mcpServerStatus } = useTaskMaster() as TaskMasterSidebarContext;
   const { tasksEnabled } = useTasksSettings();
   const paletteOps = usePaletteOps();
@@ -361,6 +361,8 @@ function Sidebar({
             projectListProps={projectListProps}
             flatSessionView={flatSessionView}
             onFlatSessionViewChange={(value) => setPreference('flatSessionView', value)}
+            filtersExpanded={filtersExpanded}
+            onFiltersExpandedChange={(value) => setPreference('filtersExpanded', value)}
             flatListProps={flatListProps}
             t={t}
           />

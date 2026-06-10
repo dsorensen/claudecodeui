@@ -42,7 +42,9 @@
     "grouped": "Grouped",
     "flat": "Recent",
     "groupedTooltip": "Group sessions by project",
-    "flatTooltip": "Show all sessions by recency"
+    "flatTooltip": "Show all sessions by recency",
+    "showFilters": "필터 표시",
+    "hideFilters": "필터 숨기기"
   },
   "newSession": {
     "tooltip": "새 세션",

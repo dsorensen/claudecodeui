@@ -8,6 +8,7 @@ type UiPreferences = {
   sendByCtrlEnter: boolean;
   sidebarVisible: boolean;
   flatSessionView: boolean;
+  filtersExpanded: boolean;
 };
 
 type UiPreferenceKey = keyof UiPreferences;
@@ -41,6 +42,7 @@ const DEFAULTS: UiPreferences = {
   sendByCtrlEnter: false,
   sidebarVisible: true,
   flatSessionView: false,
+  filtersExpanded: false,
 };
 
 const PREFERENCE_KEYS = Object.keys(DEFAULTS) as UiPreferenceKey[];
@@ -79,6 +81,15 @@ const readLegacyPreference = (key: UiPreferenceKey, fallback: boolean): boolean 
   }
 };
 
+// Applies defaults + boolean coercion to an already-parsed preferences object.
+// Kept pure (no localStorage/window access) so it is unit-testable and so a
+// stored blob missing newly-added keys falls back to their defaults.
+export const normalizePreferences = (parsed: Record<string, unknown>): UiPreferences =>
+  PREFERENCE_KEYS.reduce((acc, key) => {
+    acc[key] = parseBoolean(parsed[key], DEFAULTS[key]);
+    return acc;
+  }, { ...DEFAULTS });
+
 const readInitialPreferences = (storageKey: string): UiPreferences => {
   if (typeof window === 'undefined') {
     return DEFAULTS;
@@ -90,12 +101,7 @@ const readInitialPreferences = (storageKey: string): UiPreferences => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        const parsedRecord = parsed as Record<string, unknown>;
-
-        return PREFERENCE_KEYS.reduce((acc, key) => {
-          acc[key] = parseBoolean(parsedRecord[key], DEFAULTS[key]);
-          return acc;
-        }, { ...DEFAULTS });
+        return normalizePreferences(parsed as Record<string, unknown>);
       }
     }
   } catch {

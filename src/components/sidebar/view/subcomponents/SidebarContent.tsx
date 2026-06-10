@@ -149,6 +149,8 @@ type SidebarContentProps = {
   projectListProps: SidebarProjectListProps;
   flatSessionView: boolean;
   onFlatSessionViewChange: (value: boolean) => void;
+  filtersExpanded: boolean;
+  onFiltersExpandedChange: (value: boolean) => void;
   flatListProps: SidebarFlatSessionListProps;
   t: TFunction;
 };
@@ -190,6 +192,8 @@ export default function SidebarContent({
   projectListProps,
   flatSessionView,
   onFlatSessionViewChange,
+  filtersExpanded,
+  onFiltersExpandedChange,
   flatListProps,
   t,
 }: SidebarContentProps) {
@@ -220,6 +224,8 @@ export default function SidebarContent({
         onCollapseSidebar={onCollapseSidebar}
         flatSessionView={flatSessionView}
         onFlatSessionViewChange={onFlatSessionViewChange}
+        filtersExpanded={filtersExpanded}
+        onFiltersExpandedChange={onFiltersExpandedChange}
         projects={projects}
         onNewSession={onNewSession}
         onProjectSelect={onProjectSelect}

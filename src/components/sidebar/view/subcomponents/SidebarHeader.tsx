@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Archive, Folder, FolderPlus, History, LayoutList, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
+import { Archive, ChevronDown, Folder, FolderPlus, History, LayoutList, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Search, X, PanelLeftClose } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { Button, Input, Tooltip } from '../../../../shared/view/ui';
 import { IS_PLATFORM } from '../../../../constants/config';
@@ -53,6 +53,25 @@ function ViewModeToggle({ flatSessionView, onFlatSessionViewChange, t }: ViewMod
   );
 }
 
+type FiltersToggleProps = {
+  filtersExpanded: boolean;
+  onFiltersExpandedChange: (value: boolean) => void;
+  t: TFunction;
+};
+
+function FiltersToggle({ filtersExpanded, onFiltersExpandedChange, t }: FiltersToggleProps) {
+  return (
+    <button
+      onClick={() => onFiltersExpandedChange(!filtersExpanded)}
+      aria-expanded={filtersExpanded}
+      className="flex w-full items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <span>{filtersExpanded ? t('viewMode.hideFilters') : t('viewMode.showFilters')}</span>
+      <ChevronDown className={cn('h-3 w-3 transition-transform', filtersExpanded && 'rotate-180')} />
+    </button>
+  );
+}
+
 type SidebarHeaderProps = {
   isPWA: boolean;
   isMobile: boolean;
@@ -71,6 +90,8 @@ type SidebarHeaderProps = {
   onCollapseSidebar: () => void;
   flatSessionView: boolean;
   onFlatSessionViewChange: (value: boolean) => void;
+  filtersExpanded: boolean;
+  onFiltersExpandedChange: (value: boolean) => void;
   projects: Project[];
   onNewSession: (project: Project) => void;
   onProjectSelect: (project: Project) => void;
@@ -95,6 +116,8 @@ export default function SidebarHeader({
   onCollapseSidebar,
   flatSessionView,
   onFlatSessionViewChange,
+  filtersExpanded,
+  onFiltersExpandedChange,
   projects,
   onNewSession,
   onProjectSelect,
@@ -209,6 +232,9 @@ export default function SidebarHeader({
         {/* Search bar */}
         {showSearchTools && (
           <div className="mt-2.5 space-y-2">
+            <FiltersToggle filtersExpanded={filtersExpanded} onFiltersExpandedChange={onFiltersExpandedChange} t={t} />
+            {filtersExpanded && (
+              <div className="space-y-2">
             <ViewModeToggle flatSessionView={flatSessionView} onFlatSessionViewChange={onFlatSessionViewChange} t={t} />
             {/* Search mode toggle */}
             <div className="flex rounded-lg bg-muted/50 p-0.5">
@@ -283,6 +309,8 @@ export default function SidebarHeader({
                 </kbd>
               )}
             </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -350,6 +378,9 @@ export default function SidebarHeader({
         {/* Mobile search */}
         {showSearchTools && (
           <div className="mt-2.5 space-y-2">
+            <FiltersToggle filtersExpanded={filtersExpanded} onFiltersExpandedChange={onFiltersExpandedChange} t={t} />
+            {filtersExpanded && (
+              <div className="space-y-2">
             <ViewModeToggle flatSessionView={flatSessionView} onFlatSessionViewChange={onFlatSessionViewChange} t={t} />
             <div className="flex rounded-lg bg-muted/50 p-0.5">
               <button
@@ -414,6 +445,8 @@ export default function SidebarHeader({
                 </button>
               )}
             </div>
+              </div>
+            )}
           </div>
         )}
       </div>

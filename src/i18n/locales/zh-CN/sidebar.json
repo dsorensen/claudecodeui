@@ -42,7 +42,9 @@
     "grouped": "Grouped",
     "flat": "Recent",
     "groupedTooltip": "Group sessions by project",
-    "flatTooltip": "Show all sessions by recency"
+    "flatTooltip": "Show all sessions by recency",
+    "showFilters": "显示筛选器",
+    "hideFilters": "隐藏筛选器"
   },
   "newSession": {
     "tooltip": "新建会话",
