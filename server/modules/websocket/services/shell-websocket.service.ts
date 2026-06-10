@@ -39,7 +39,45 @@ type ShellWebSocketDependencies = {
   normalizeDetectedUrl: (url: string) => string | null;
   extractUrlsFromText: (content: string) => string[];
   shouldAutoOpenUrlFromOutput: (content: string) => boolean;
+  isClaudeSDKSessionActive: (sessionId: string) => boolean;
 };
+
+/**
+ * Finds a PTY session (if any) running for the given agent session id, including
+ * dormant tabs still inside the 30-minute reconnect grace. The chat side uses
+ * this to refuse a resume that would race a shell's `claude --resume` child on
+ * the same `~/.claude/projects/<cwd>/<id>.jsonl` (DEV-57).
+ */
+export function findPtyForSessionId(
+  sessionId: string
+): { key: string; entry: PtySessionEntry } | null {
+  if (!sessionId) return null;
+  for (const [key, entry] of ptySessionsMap.entries()) {
+    if (entry.sessionId === sessionId) {
+      return { key, entry };
+    }
+  }
+  return null;
+}
+
+/**
+ * Decides whether a shell about to run `claude --resume <sessionId>` must be
+ * refused because the chat SDK is actively driving the same session. Two live
+ * Claude Code children on one session id append to the same session .jsonl with
+ * no locking (DEV-57). Scope is Claude-only; only an `active` SDK child blocks —
+ * the post-run grace window used for replay buffering does not spawn a second
+ * writer and is safe.
+ */
+export function shouldRefuseClaudeShellResume(
+  context: { provider: string; hasSession: boolean; sessionId: string | null; isPlainShell: boolean },
+  isClaudeSDKSessionActive: (sessionId: string) => boolean
+): boolean {
+  const { provider, hasSession, sessionId, isPlainShell } = context;
+  if (provider !== 'claude' || !hasSession || !sessionId || isPlainShell) {
+    return false;
+  }
+  return isClaudeSDKSessionActive(sessionId);
+}
 
 /**
  * Reads a string field from untyped payloads and falls back when absent.
@@ -254,6 +292,28 @@ export function handleShellConnection(
         const safeSessionIdPattern = /^[a-zA-Z0-9_.\-:]+$/;
         if (sessionId && !safeSessionIdPattern.test(sessionId)) {
           ws.send(JSON.stringify({ type: 'error', message: 'Invalid session ID' }));
+          return;
+        }
+
+        // Conflict guard (symmetric to the chat-side check in
+        // handleChatConnection): refuse to spawn a `claude --resume <sessionId>`
+        // PTY while the chat SDK is actively processing the same session — two
+        // live Claude Code children would write concurrently to the session
+        // .jsonl (DEV-57).
+        if (
+          shouldRefuseClaudeShellResume(
+            { provider, hasSession, sessionId, isPlainShell },
+            dependencies.isClaudeSDKSessionActive
+          )
+        ) {
+          const shortId = (sessionId ?? '').slice(0, 8);
+          console.warn(`[WARN] Shell refused: chat is processing session ${sessionId}`);
+          ws.send(
+            JSON.stringify({
+              type: 'output',
+              data: `\r\n\x1b[31mError: chat is still processing this conversation (session ${shortId}…). Wait for it to finish (or abort it) before opening a shell for this session.\x1b[0m\r\n`,
+            })
+          );
           return;
         }
 

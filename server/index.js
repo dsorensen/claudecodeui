@@ -16,6 +16,7 @@ import { AppError, WORKSPACES_ROOT, getOpenCodeDatabasePath, validateWorkspacePa
 import { getClaudeConfigDir } from '@/shared/claude-config-dir.js';
 import { closeSessionsWatcher, initializeSessionsWatcher } from '@/modules/providers/index.js';
 import { createWebSocketServer } from '@/modules/websocket/index.js';
+import { findPtyForSessionId } from '@/modules/websocket/services/shell-websocket.service.js';
 
 import { getConnectableHost } from '../shared/networkHosts.js';
 
@@ -115,6 +116,7 @@ const wss = createWebSocketServer(server, {
         isGeminiSessionActive,
         isOpenCodeSessionActive,
         reconnectSessionWriter,
+        findPtyForSessionId,
         getPendingApprovalsForSession,
         getActiveClaudeSDKSessions,
         getActiveCursorSessions,
@@ -128,6 +130,7 @@ const wss = createWebSocketServer(server, {
         normalizeDetectedUrl,
         extractUrlsFromText,
         shouldAutoOpenUrlFromOutput,
+        isClaudeSDKSessionActive,
     },
     getPluginPort,
 });

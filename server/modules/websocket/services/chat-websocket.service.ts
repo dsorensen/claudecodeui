@@ -51,6 +51,7 @@ type ChatWebSocketDependencies = {
   isGeminiSessionActive: (sessionId: string) => boolean;
   isOpenCodeSessionActive: (sessionId: string) => boolean;
   reconnectSessionWriter: (sessionId: string, ws: WebSocket) => boolean;
+  findPtyForSessionId: (sessionId: string) => { key: string } | null;
   getPendingApprovalsForSession: (sessionId: string) => unknown[];
   getActiveClaudeSDKSessions: () => unknown;
   getActiveCursorSessions: () => unknown;
@@ -126,6 +127,26 @@ export function handleChatConnection(
 
       if (messageType === 'claude-command') {
         const provider = readProvider(data.provider);
+        const resumeSessionId =
+          typeof data.options?.sessionId === 'string' ? data.options.sessionId : '';
+        // Conflict guard: refuse if a shell PTY is still running for this
+        // session id (including dormant tabs in the 30-minute reconnect grace).
+        // Running the chat SDK child concurrently with the shell's
+        // `claude --resume` child would produce two writers on the same session
+        // file (DEV-57).
+        if (resumeSessionId && dependencies.findPtyForSessionId(resumeSessionId)) {
+          const shortId = resumeSessionId.slice(0, 8);
+          console.warn(`[WARN] Chat refused: shell PTY owns session ${resumeSessionId}`);
+          writer.send(
+            createNormalizedMessage({
+              kind: 'error',
+              content: `A shell is still active for this conversation (session ${shortId}…). Close the shell tab or type \`exit\` in it before sending a chat message, or start a new conversation.`,
+              sessionId: resumeSessionId,
+              provider: 'claude',
+            })
+          );
+          return;
+        }
         await dependencies.queryClaudeSDK(
           data.command ?? '',
           { ...(data.options ?? {}), provider },
