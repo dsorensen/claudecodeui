@@ -17,6 +17,7 @@ import { getClaudeConfigDir } from '@/shared/claude-config-dir.js';
 import { closeSessionsWatcher, initializeSessionsWatcher } from '@/modules/providers/index.js';
 import { createWebSocketServer } from '@/modules/websocket/index.js';
 import { findPtyForSessionId } from '@/modules/websocket/services/shell-websocket.service.js';
+import { ClaudeProviderAuth } from '@/modules/providers/list/claude/claude-auth.provider.js';
 
 import { getConnectableHost } from '../shared/networkHosts.js';
 
@@ -92,6 +93,10 @@ console.log('SERVER_PORT from env:', process.env.SERVER_PORT);
 const app = express();
 const server = http.createServer(app);
 
+// Default-profile Claude auth, used to prefer OAuth (Pro subscription) over a
+// stray ANTHROPIC_API_KEY when spawning shell PTYs.
+const claudeProviderAuth = new ClaudeProviderAuth();
+
 // Single WebSocket server that handles chat, shell, and plugin proxy paths.
 const wss = createWebSocketServer(server, {
     verifyClient: {
@@ -131,6 +136,7 @@ const wss = createWebSocketServer(server, {
         extractUrlsFromText,
         shouldAutoOpenUrlFromOutput,
         isClaudeSDKSessionActive,
+        hasClaudeOAuth: () => claudeProviderAuth.hasClaudeOAuth(),
     },
     getPluginPort,
 });

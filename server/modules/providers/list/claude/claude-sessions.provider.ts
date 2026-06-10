@@ -211,11 +211,12 @@ async function getSessionMessages(
  */
 const INTERNAL_CONTENT_PREFIXES = [
   '<system-reminder>',
+  '<local-command-caveat>',
   'Caveat:',
   '[Request interrupted',
 ] as const;
 
-function isInternalContent(content: string): boolean {
+export function isInternalContent(content: string): boolean {
   return INTERNAL_CONTENT_PREFIXES.some((prefix) => content.startsWith(prefix));
 }
 

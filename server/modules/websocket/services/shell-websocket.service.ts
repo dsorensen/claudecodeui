@@ -40,6 +40,7 @@ type ShellWebSocketDependencies = {
   extractUrlsFromText: (content: string) => string[];
   shouldAutoOpenUrlFromOutput: (content: string) => boolean;
   isClaudeSDKSessionActive: (sessionId: string) => boolean;
+  hasClaudeOAuth: () => Promise<boolean>;
 };
 
 /**
@@ -77,6 +78,29 @@ export function shouldRefuseClaudeShellResume(
     return false;
   }
   return isClaudeSDKSessionActive(sessionId);
+}
+
+/**
+ * Builds the environment for a spawned shell PTY. For Claude shells, drops
+ * ANTHROPIC_API_KEY when valid OAuth exists so the CLI uses the Pro
+ * subscription instead of falling back to a stray pay-as-you-go API key in the
+ * parent environment.
+ */
+export function buildShellSpawnEnv(
+  baseEnv: NodeJS.ProcessEnv,
+  provider: string,
+  hasClaudeOAuth: boolean
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    ...baseEnv,
+    TERM: 'xterm-256color',
+    COLORTERM: 'truecolor',
+    FORCE_COLOR: '3',
+  };
+  if ((provider === 'claude' || !provider) && hasClaudeOAuth) {
+    delete env.ANTHROPIC_API_KEY;
+  }
+  return env;
 }
 
 /**
@@ -329,12 +353,7 @@ export function handleShellConnection(
           cols: termCols,
           rows: termRows,
           cwd: resolvedProjectPath,
-          env: {
-            ...process.env,
-            TERM: 'xterm-256color',
-            COLORTERM: 'truecolor',
-            FORCE_COLOR: '3',
-          },
+          env: buildShellSpawnEnv(process.env, provider, await dependencies.hasClaudeOAuth()),
         });
 
         ptySessionsMap.set(ptySessionKey, {

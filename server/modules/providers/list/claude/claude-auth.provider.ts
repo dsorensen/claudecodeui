@@ -20,6 +20,42 @@ const hasErrorCode = (error: unknown, code: string): boolean => (
   error instanceof Error && 'code' in error && error.code === code
 );
 
+/**
+ * Result of reading ~/.claude/.credentials.json: either valid (unexpired) OAuth
+ * with the account email, or invalid with a user-facing reason.
+ */
+export type ClaudeOAuthState =
+  | { kind: 'valid'; email: string | null }
+  | { kind: 'invalid'; error: string };
+
+/**
+ * Decides Claude auth status with OAuth-first priority: a valid Pro-subscription
+ * OAuth login wins over a stray ANTHROPIC_API_KEY in the environment or
+ * settings.json, so users see their account identity and use their subscription
+ * rather than pay-as-you-go API billing. Falls back to API key sources, and
+ * surfaces the OAuth read error only when nothing authenticates.
+ */
+export function resolveClaudeAuthStatus(
+  oauth: ClaudeOAuthState,
+  envApiKey: string | null | undefined,
+  settingsApiKey: string | null | undefined,
+  settingsAuthToken: string | null | undefined,
+): ClaudeCredentialsStatus {
+  if (oauth.kind === 'valid') {
+    return { authenticated: true, email: oauth.email, method: 'credentials_file' };
+  }
+  if (envApiKey?.trim()) {
+    return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
+  }
+  if (settingsApiKey?.trim()) {
+    return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
+  }
+  if (settingsAuthToken?.trim()) {
+    return { authenticated: true, email: 'Configured via settings.json', method: 'api_key' };
+  }
+  return { authenticated: false, email: null, method: null, error: oauth.error };
+}
+
 export class ClaudeProviderAuth implements IProviderAuth {
   private readonly explicitConfigDir?: string;
 
@@ -88,23 +124,11 @@ export class ClaudeProviderAuth implements IProviderAuth {
   }
 
   /**
-   * Checks Claude credentials in the same priority order used by Claude Code.
+   * Reads OAuth credentials from `<configDir>/.credentials.json`, classifying
+   * the result as valid (unexpired) or invalid with a user-facing reason.
    */
-  private async checkCredentials(): Promise<ClaudeCredentialsStatus> {
+  private async readOAuthState(): Promise<ClaudeOAuthState> {
     const missingCredentialsError = 'Claude CLI is not authenticated. Run claude /login or configure ANTHROPIC_API_KEY.';
-
-    if (process.env.ANTHROPIC_API_KEY?.trim()) {
-      return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
-    }
-
-    const settingsEnv = await this.loadSettingsEnv();
-    if (readOptionalString(settingsEnv.ANTHROPIC_API_KEY)) {
-      return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
-    }
-
-    if (readOptionalString(settingsEnv.ANTHROPIC_AUTH_TOKEN)) {
-      return { authenticated: true, email: 'Configured via settings.json', method: 'api_key' };
-    }
 
     try {
       const credPath = path.join(this.configDir, '.credentials.json');
@@ -113,46 +137,49 @@ export class ClaudeProviderAuth implements IProviderAuth {
       const oauth = readObjectRecord(creds.claudeAiOauth);
       const accessToken = readOptionalString(oauth?.accessToken);
 
-      if (accessToken) {
-        const expiresAt = typeof oauth?.expiresAt === 'number' ? oauth.expiresAt : undefined;
-        const email = readOptionalString(creds.email) ?? readOptionalString(creds.user) ?? null;
-        if (!expiresAt || Date.now() < expiresAt) {
-          return {
-            authenticated: true,
-            email,
-            method: 'credentials_file',
-          };
-        }
-
-        return {
-          authenticated: false,
-          email: null,
-          method: null,
-          error: 'Claude login has expired. Run claude /login again.',
-        };
+      if (!accessToken) {
+        return { kind: 'invalid', error: missingCredentialsError };
       }
 
-      return {
-        authenticated: false,
-        email: null,
-        method: null,
-        error: missingCredentialsError,
-      };
+      const expiresAt = typeof oauth?.expiresAt === 'number' ? oauth.expiresAt : undefined;
+      if (expiresAt && Date.now() >= expiresAt) {
+        return { kind: 'invalid', error: 'Claude login has expired. Run claude /login again.' };
+      }
+
+      const email = readOptionalString(creds.email) ?? readOptionalString(creds.user) ?? null;
+      return { kind: 'valid', email };
     } catch (error) {
-      let errorMessage = 'Unable to read Claude credentials. Run claude /login again.';
-
       if (hasErrorCode(error, 'ENOENT')) {
-        errorMessage = missingCredentialsError;
-      } else if (error instanceof SyntaxError) {
-        errorMessage = 'Claude credentials are unreadable. Run claude /login again.';
+        return { kind: 'invalid', error: missingCredentialsError };
       }
-
-      return {
-        authenticated: false,
-        email: null,
-        method: null,
-        error: errorMessage,
-      };
+      if (error instanceof SyntaxError) {
+        return { kind: 'invalid', error: 'Claude credentials are unreadable. Run claude /login again.' };
+      }
+      return { kind: 'invalid', error: 'Unable to read Claude credentials. Run claude /login again.' };
     }
+  }
+
+  /**
+   * Whether valid, unexpired OAuth credentials exist for this config dir. Used to
+   * decide whether to strip ANTHROPIC_API_KEY when spawning Claude processes so
+   * OAuth (the Pro subscription) takes precedence over a stray env API key.
+   */
+  async hasClaudeOAuth(): Promise<boolean> {
+    return (await this.readOAuthState()).kind === 'valid';
+  }
+
+  /**
+   * Checks Claude credentials with OAuth-first priority (see
+   * {@link resolveClaudeAuthStatus}).
+   */
+  private async checkCredentials(): Promise<ClaudeCredentialsStatus> {
+    const oauth = await this.readOAuthState();
+    const settingsEnv = await this.loadSettingsEnv();
+    return resolveClaudeAuthStatus(
+      oauth,
+      process.env.ANTHROPIC_API_KEY,
+      readOptionalString(settingsEnv.ANTHROPIC_API_KEY),
+      readOptionalString(settingsEnv.ANTHROPIC_AUTH_TOKEN),
+    );
   }
 }
