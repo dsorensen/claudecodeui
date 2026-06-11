@@ -32,6 +32,19 @@ test('falls back to settings.json API key, then auth token', () => {
   assert.equal(tok.email, 'Configured via settings.json');
 });
 
+test('recognizes the ANTHROPIC_AUTH_TOKEN env var as a fallback', () => {
+  const status = resolveClaudeAuthStatus(noOAuth, undefined, undefined, undefined, 'tok-env');
+  assert.equal(status.authenticated, true);
+  assert.equal(status.method, 'api_key');
+  assert.equal(status.email, 'Auth Token');
+});
+
+test('OAuth still takes precedence over the env auth token', () => {
+  const status = resolveClaudeAuthStatus(validOAuth, undefined, undefined, undefined, 'tok-env');
+  assert.equal(status.method, 'credentials_file');
+  assert.equal(status.email, 'pro@example.com');
+});
+
 test('reports the OAuth error when nothing authenticates', () => {
   const status = resolveClaudeAuthStatus(
     { kind: 'invalid', error: 'Claude login has expired. Run claude /login again.' },

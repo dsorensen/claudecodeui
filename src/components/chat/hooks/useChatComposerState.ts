@@ -12,7 +12,6 @@ import type {
 import { useDropzone } from 'react-dropzone';
 
 import { authenticatedFetch } from '../../../utils/api';
-import { thinkingModes } from '../constants/thinkingModes';
 import { grantClaudeToolPermission } from '../utils/chatPermissions';
 import { safeLocalStorage } from '../utils/chatStorage';
 import type {
@@ -205,7 +204,6 @@ export function useChatComposerState({
   const [uploadingImages, setUploadingImages] = useState<Map<string, number>>(new Map());
   const [imageErrors, setImageErrors] = useState<Map<string, string>>(new Map());
   const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
-  const [thinkingMode, setThinkingMode] = useState('none');
   const [commandModalPayload, setCommandModalPayload] = useState<CommandModalPayload | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -314,7 +312,7 @@ export function useChatComposerState({
   }, [addMessage]);
 
   const executeCommand = useCallback(
-    async (command: SlashCommand, rawInput?: string) => {
+    async (command: SlashCommand, rawInput?: string, options?: { preserveInput?: boolean }) => {
       if (!command || !selectedProject) {
         return;
       }
@@ -371,8 +369,10 @@ export function useChatComposerState({
         const result = (await response.json()) as CommandExecutionResult;
         if (result.type === 'builtin') {
           handleBuiltInCommand(result);
-          setInput('');
-          inputValueRef.current = '';
+          if (!options?.preserveInput) {
+            setInput('');
+            inputValueRef.current = '';
+          }
         } else if (result.type === 'custom') {
           await handleCustomCommand(result);
         }
@@ -402,6 +402,19 @@ export function useChatComposerState({
       tokenBudget,
     ],
   );
+
+  const showCostModal = useCallback(() => {
+    executeCommand(
+      {
+        name: '/cost',
+        description: 'Display token usage information',
+        namespace: 'builtin',
+        metadata: { type: 'builtin' },
+      } as SlashCommand,
+      '/cost',
+      { preserveInput: true },
+    );
+  }, [executeCommand]);
 
   const {
     slashCommands,
@@ -563,11 +576,7 @@ export function useChatComposerState({
         }
       }
 
-      let messageContent = currentInput;
-      const selectedThinkingMode = thinkingModes.find((mode: { id: string; prefix?: string }) => mode.id === thinkingMode);
-      if (selectedThinkingMode && selectedThinkingMode.prefix) {
-        messageContent = `${selectedThinkingMode.prefix}: ${currentInput}`;
-      }
+      const messageContent = currentInput;
 
       let uploadedImages: unknown[] = [];
       if (attachedImages.length > 0) {
@@ -751,7 +760,6 @@ export function useChatComposerState({
       setUploadingImages(new Map());
       setImageErrors(new Map());
       setIsTextareaExpanded(false);
-      setThinkingMode('none');
 
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -785,7 +793,6 @@ export function useChatComposerState({
       setIsLoading,
       setIsUserScrolledUp,
       slashCommands,
-      thinkingMode,
     ],
   );
 
@@ -1022,8 +1029,6 @@ export function useChatComposerState({
     textareaRef,
     inputHighlightRef,
     isTextareaExpanded,
-    thinkingMode,
-    setThinkingMode,
     slashCommandsCount,
     filteredCommands,
     frequentCommands,
@@ -1061,5 +1066,6 @@ export function useChatComposerState({
     isInputFocused,
     commandModalPayload,
     closeCommandModal,
+    showCostModal,
   };
 }

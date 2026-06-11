@@ -79,7 +79,7 @@ export type ClaudeProfile = {
 };
 
 /**
- * One selectable model row (matches the documentation `public/modelConstants.js` option shape).
+ * One selectable model row in a provider model catalog.
  */
 export type ProviderModelOption = {
   value: string;

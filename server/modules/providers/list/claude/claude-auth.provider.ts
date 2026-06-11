@@ -40,12 +40,16 @@ export function resolveClaudeAuthStatus(
   envApiKey: string | null | undefined,
   settingsApiKey: string | null | undefined,
   settingsAuthToken: string | null | undefined,
+  envAuthToken?: string | null | undefined,
 ): ClaudeCredentialsStatus {
   if (oauth.kind === 'valid') {
     return { authenticated: true, email: oauth.email, method: 'credentials_file' };
   }
   if (envApiKey?.trim()) {
     return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
+  }
+  if (envAuthToken?.trim()) {
+    return { authenticated: true, email: 'Auth Token', method: 'api_key' };
   }
   if (settingsApiKey?.trim()) {
     return { authenticated: true, email: 'API Key Auth', method: 'api_key' };
@@ -180,6 +184,7 @@ export class ClaudeProviderAuth implements IProviderAuth {
       process.env.ANTHROPIC_API_KEY,
       readOptionalString(settingsEnv.ANTHROPIC_API_KEY),
       readOptionalString(settingsEnv.ANTHROPIC_AUTH_TOKEN),
+      process.env.ANTHROPIC_AUTH_TOKEN,
     );
   }
 }

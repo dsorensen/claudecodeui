@@ -26,9 +26,9 @@ export const CLAUDE_FALLBACK_MODELS: ProviderModelsDefinition = {
       description: 'Fable 5 · Most capable for your hardest and longest-running tasks · Uses your limits ~2× faster than Opus',
     },
     {
-      value: 'sonnet',
-      label: 'Sonnet',
-      description: 'Sonnet 4.6 · Best for everyday tasks · $3/$15 per Mtok',
+      value: "sonnet",
+      label: "Sonnet",
+      description: "Sonnet 4.6 · Best for everyday tasks · $3/$15 per Mtok",
     },
     {
       value: 'sonnet[1m]',
