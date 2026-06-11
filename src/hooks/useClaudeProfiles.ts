@@ -3,29 +3,25 @@ import { useEffect, useState } from 'react';
 import { authenticatedFetch } from '../utils/api';
 import type { ClaudeProfileSummary } from '../types/app';
 
-const DEFAULT_PROFILES: ClaudeProfileSummary[] = [{ id: 'claude', label: 'Claude', isDefault: true }];
+import {
+  DEFAULT_PROFILES,
+  interpretProfilesResponse,
+  type ProfilesApiResponse,
+} from './useClaudeProfiles.logic';
 
-type ProfilesApiResponse = {
-  success?: boolean;
-  data?: { provider?: string; profiles?: ClaudeProfileSummary[] };
-};
-
-// Module-level cache: one fetch per page load, shared by every hook consumer.
+// Module-level cache: one successful fetch per page load, shared by every hook
+// consumer. Failed fetches are never cached, so a later mount can retry.
 let cache: ClaudeProfileSummary[] | null = null;
-let inflight: Promise<ClaudeProfileSummary[]> | null = null;
+let inflight: Promise<ClaudeProfileSummary[] | null> | null = null;
 const subscribers = new Set<(profiles: ClaudeProfileSummary[]) => void>();
 
-async function fetchProfiles(): Promise<ClaudeProfileSummary[]> {
+async function fetchProfiles(): Promise<ClaudeProfileSummary[] | null> {
   try {
     const response = await authenticatedFetch('/api/providers/claude/profiles');
-    if (!response.ok) {
-      return DEFAULT_PROFILES;
-    }
-    const body = (await response.json()) as ProfilesApiResponse;
-    const profiles = body?.data?.profiles;
-    return Array.isArray(profiles) && profiles.length > 0 ? profiles : DEFAULT_PROFILES;
+    const body = response.ok ? ((await response.json()) as ProfilesApiResponse) : null;
+    return interpretProfilesResponse(response.ok, body);
   } catch {
-    return DEFAULT_PROFILES;
+    return null;
   }
 }
 
@@ -33,11 +29,18 @@ function ensureLoaded(): void {
   if (cache || inflight) {
     return;
   }
-  inflight = fetchProfiles().then((profiles) => {
-    cache = profiles;
+  inflight = fetchProfiles().then((result) => {
     inflight = null;
-    subscribers.forEach((notify) => notify(profiles));
-    return profiles;
+    // Only an authoritative result is cached and broadcast. On failure we leave
+    // the cache empty so the next consumer to mount retries, and surface the
+    // single default in the meantime without persisting it.
+    if (result) {
+      cache = result;
+      subscribers.forEach((notify) => notify(result));
+    } else {
+      subscribers.forEach((notify) => notify(DEFAULT_PROFILES));
+    }
+    return result;
   });
 }
 
